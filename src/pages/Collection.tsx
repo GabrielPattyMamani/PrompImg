@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import EntryCard from '../components/EntryCard'
 import NewEntryModal from '../components/NewEntryModal'
+import EditEntryModal from '../components/EditEntryModal'
 import type { Collection as CollectionType, Entry } from '../types'
 
 export default function Collection() {
@@ -12,6 +13,7 @@ export default function Collection() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null)
 
   useEffect(() => {
     if (id) fetchData(id)
@@ -34,10 +36,24 @@ export default function Collection() {
 
   async function deleteEntry(entryId: string) {
     if (!confirm('¿Eliminar este prompt?')) return
-
     await supabase.from('entries').delete().eq('id', entryId)
     setEntries(prev => prev.filter(e => e.id !== entryId))
   }
+
+  function handleSaved(updated: Entry) {
+    setEntries(prev => prev.map(e => e.id === updated.id ? updated : e))
+  }
+
+  const duplicatePrompts = useMemo(() => {
+    const counts = new Map<string, number>()
+    entries.forEach(e => {
+      const key = e.prompt.trim().toLowerCase()
+      counts.set(key, (counts.get(key) ?? 0) + 1)
+    })
+    const dupes = new Set<string>()
+    counts.forEach((count, key) => { if (count > 1) dupes.add(key) })
+    return dupes
+  }, [entries])
 
   if (loading) {
     return (
@@ -63,6 +79,8 @@ export default function Collection() {
       </Layout>
     )
   }
+
+  const dupeCount = entries.filter(e => duplicatePrompts.has(e.prompt.trim().toLowerCase())).length
 
   return (
     <Layout>
@@ -93,6 +111,18 @@ export default function Collection() {
         </button>
       </div>
 
+      {dupeCount > 0 && (
+        <div className="flex items-center gap-2.5 px-4 py-3 mb-6 bg-amber-500/10 border border-amber-500/25 rounded-xl">
+          <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-amber-400 text-sm">
+            <span className="font-semibold">{dupeCount} {dupeCount === 1 ? 'prompt duplicado' : 'prompts duplicados'}</span>
+            {' '}— revisa las tarjetas marcadas en naranja
+          </p>
+        </div>
+      )}
+
       {entries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
@@ -115,6 +145,8 @@ export default function Collection() {
               key={entry.id}
               entry={entry}
               onDelete={deleteEntry}
+              onEdit={setEditingEntry}
+              isDuplicate={duplicatePrompts.has(entry.prompt.trim().toLowerCase())}
             />
           ))}
         </div>
@@ -125,6 +157,14 @@ export default function Collection() {
           collectionId={collection.id}
           onClose={() => setShowModal(false)}
           onCreated={entry => setEntries(prev => [entry, ...prev])}
+        />
+      )}
+
+      {editingEntry && (
+        <EditEntryModal
+          entry={editingEntry}
+          onClose={() => setEditingEntry(null)}
+          onSaved={handleSaved}
         />
       )}
     </Layout>

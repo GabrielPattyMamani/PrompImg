@@ -31,6 +31,7 @@ export default function NewEntryModal({ collectionId, onClose, onCreated }: Prop
   const [previews, setPreviews] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [lightbox, setLightbox] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   function handleFiles(selected: FileList | null) {
@@ -110,6 +111,21 @@ export default function NewEntryModal({ collectionId, onClose, onCreated }: Prop
   }
 
   return (
+    <>
+    {lightbox && (
+      <div
+        className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+        onClick={() => setLightbox(null)}
+      >
+        <img src={lightbox} className="max-w-full max-h-full object-contain rounded-lg" alt="" />
+        <button
+          className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl"
+          onClick={() => setLightbox(null)}
+        >
+          ×
+        </button>
+      </div>
+    )}
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-[#1a1a22] border border-white/10 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[90svh] overflow-y-auto">
@@ -159,11 +175,11 @@ export default function NewEntryModal({ collectionId, onClose, onCreated }: Prop
             {previews.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
                 {previews.map((src, i) => (
-                  <div key={i} className="relative group aspect-square">
+                  <div key={i} className="relative group aspect-square cursor-zoom-in" onClick={() => setLightbox(src)}>
                     <img src={src} className="w-full h-full object-cover rounded-lg" alt="" />
                     <button
                       type="button"
-                      onClick={() => removeFile(i)}
+                      onClick={e => { e.stopPropagation(); removeFile(i) }}
                       className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                     >
                       ×
@@ -193,5 +209,6 @@ export default function NewEntryModal({ collectionId, onClose, onCreated }: Prop
         </form>
       </div>
     </div>
+    </>
   )
 }
