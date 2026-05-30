@@ -35,12 +35,6 @@ export default function Collection() {
   async function deleteEntry(entryId: string) {
     if (!confirm('¿Eliminar este prompt?')) return
 
-    const entry = entries.find(e => e.id === entryId)
-    if (entry?.images?.length) {
-      const paths = entry.images.map(img => img.storage_path)
-      await supabase.storage.from('prompt-images').remove(paths)
-    }
-
     await supabase.from('entries').delete().eq('id', entryId)
     setEntries(prev => prev.filter(e => e.id !== entryId))
   }
