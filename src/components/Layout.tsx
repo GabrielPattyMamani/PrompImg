@@ -20,6 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <nav className="flex items-center gap-1">
           <NavLink to="/" end className={navClass}>Prompts</NavLink>
           <NavLink to="/novels" className={navClass}>Novelas</NavLink>
+          <NavLink to="/gallery" className={navClass}>Galería</NavLink>
         </nav>
       </header>
       <main className="flex-1 px-4 sm:px-6 py-6 max-w-7xl w-full mx-auto">

@@ -49,3 +49,20 @@ export interface NovelPart {
   order_num: number
   created_at: string
 }
+
+export interface ImageAlbum {
+  id: string
+  name: string
+  description: string | null
+  created_at: string
+  image_count?: number
+  cover_image?: string | null
+}
+
+export interface AlbumImage {
+  id: string
+  album_id: string
+  image_data: string
+  name: string | null
+  created_at: string
+}
