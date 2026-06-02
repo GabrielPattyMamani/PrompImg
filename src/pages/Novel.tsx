@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import NewContextModal from '../components/NewContextModal'
 import NewPartModal from '../components/NewPartModal'
+import EditContextModal from '../components/EditContextModal'
+import EditPartModal from '../components/EditPartModal'
 import type { Novel as NovelType, NovelContext, NovelPart } from '../types'
 
 type Tab = 'contexts' | 'parts'
@@ -12,12 +14,14 @@ function TextCard({
   label,
   title,
   content,
+  onEdit,
   onDelete,
   accent,
 }: {
   label: string
   title?: string | null
   content: string
+  onEdit: () => void
   onDelete: () => void
   accent: string
 }) {
@@ -70,6 +74,12 @@ function TextCard({
         </button>
         <span className="flex-1" />
         <button
+          onClick={onEdit}
+          className="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-violet-500/20 text-white/30 hover:text-violet-400 transition-all"
+        >
+          Editar
+        </button>
+        <button
           onClick={onDelete}
           className="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400 transition-all"
         >
@@ -89,6 +99,8 @@ export default function Novel() {
   const [tab, setTab] = useState<Tab>('contexts')
   const [showContextModal, setShowContextModal] = useState(false)
   const [showPartModal, setShowPartModal] = useState(false)
+  const [editingContext, setEditingContext] = useState<NovelContext | null>(null)
+  const [editingPart, setEditingPart] = useState<NovelPart | null>(null)
 
   useEffect(() => {
     if (id) fetchData(id)
@@ -235,6 +247,7 @@ export default function Novel() {
                 label={`Contexto ${i + 1}`}
                 title={ctx.title}
                 content={ctx.content}
+                onEdit={() => setEditingContext(ctx)}
                 onDelete={() => deleteContext(ctx.id)}
                 accent="bg-amber-400/10 text-amber-300"
               />
@@ -264,6 +277,7 @@ export default function Novel() {
                 label={`Parte ${i + 1}`}
                 title={part.title}
                 content={part.content}
+                onEdit={() => setEditingPart(part)}
                 onDelete={() => deletePart(part.id)}
                 accent="bg-violet-400/10 text-violet-300"
               />
@@ -286,6 +300,28 @@ export default function Novel() {
           orderNum={parts.length + 1}
           onClose={() => setShowPartModal(false)}
           onCreated={part => setParts(prev => [...prev, part])}
+        />
+      )}
+      {editingContext && (
+        <EditContextModal
+          context={editingContext}
+          orderNum={contexts.findIndex(c => c.id === editingContext.id) + 1}
+          onClose={() => setEditingContext(null)}
+          onUpdated={updated => {
+            setContexts(prev => prev.map(c => c.id === updated.id ? updated : c))
+            setEditingContext(null)
+          }}
+        />
+      )}
+      {editingPart && (
+        <EditPartModal
+          part={editingPart}
+          orderNum={parts.findIndex(p => p.id === editingPart.id) + 1}
+          onClose={() => setEditingPart(null)}
+          onUpdated={updated => {
+            setParts(prev => prev.map(p => p.id === updated.id ? updated : p))
+            setEditingPart(null)
+          }}
         />
       )}
     </Layout>

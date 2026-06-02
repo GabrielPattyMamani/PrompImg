@@ -44,7 +44,9 @@ export default function AlbumPage() {
   const [uploading, setUploading] = useState(false)
   const [lightbox, setLightbox] = useState<AlbumImage | null>(null)
   const [showEdit, setShowEdit] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const dragCounter = useRef(0)
 
   useEffect(() => {
     fetchData()
@@ -60,12 +62,11 @@ export default function AlbumPage() {
     setLoading(false)
   }
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
+  async function uploadFiles(files: File[]) {
     if (!files.length) return
     setUploading(true)
-
     for (const file of files) {
+      if (!file.type.startsWith('image/')) continue
       const webpData = await toWebP(file)
       const name = file.name.replace(/\.[^.]+$/, '')
       const { data } = await supabase
@@ -75,9 +76,35 @@ export default function AlbumPage() {
         .single()
       if (data) setImages(prev => [data as AlbumImage, ...prev])
     }
-
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    uploadFiles(Array.from(e.target.files ?? []))
+  }
+
+  function handleDragEnter(e: React.DragEvent) {
+    e.preventDefault()
+    dragCounter.current++
+    if (e.dataTransfer.types.includes('Files')) setIsDragging(true)
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault()
+    dragCounter.current--
+    if (dragCounter.current === 0) setIsDragging(false)
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault()
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    dragCounter.current = 0
+    setIsDragging(false)
+    uploadFiles(Array.from(e.dataTransfer.files))
   }
 
   async function deleteImage(imgId: string) {
@@ -108,6 +135,24 @@ export default function AlbumPage() {
 
   return (
     <Layout>
+      <div
+        className="relative"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+      {/* Overlay drag & drop — solo desktop */}
+      {isDragging && (
+        <div className="hidden sm:flex fixed inset-0 z-50 items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
+          <div className="flex flex-col items-center gap-4 border-2 border-dashed border-violet-400 rounded-3xl px-20 py-16">
+            <svg className="w-14 h-14 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <p className="text-violet-300 text-xl font-semibold">Suelta para agregar</p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3 min-w-0">
@@ -154,7 +199,7 @@ export default function AlbumPage() {
           accept="image/*"
           multiple
           className="hidden"
-          onChange={handleUpload}
+          onChange={handleInputChange}
         />
       </div>
 
@@ -254,6 +299,7 @@ export default function AlbumPage() {
           }}
         />
       )}
+      </div>
     </Layout>
   )
 }
