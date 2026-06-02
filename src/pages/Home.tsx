@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import NewCollectionModal from '../components/NewCollectionModal'
+import EditCollectionModal from '../components/EditCollectionModal'
 import type { Collection } from '../types'
 
 export default function Home() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null)
 
   useEffect(() => {
     fetchCollections()
@@ -121,12 +123,22 @@ export default function Home() {
                   </p>
                 </div>
               </Link>
-              <button
-                onClick={() => deleteCollection(col.id)}
-                className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/50 text-white/0 group-hover:text-white/50 hover:!text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-all text-sm"
-              >
-                ×
-              </button>
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                <button
+                  onClick={() => setEditingCollection(col)}
+                  className="w-7 h-7 rounded-lg bg-black/50 text-white/50 hover:text-violet-400 hover:bg-violet-500/20 flex items-center justify-center transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => deleteCollection(col.id)}
+                  className="w-7 h-7 rounded-lg bg-black/50 text-white/50 hover:text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-all text-sm"
+                >
+                  ×
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -136,6 +148,17 @@ export default function Home() {
         <NewCollectionModal
           onClose={() => setShowModal(false)}
           onCreated={col => setCollections(prev => [{ ...col, entry_count: 0 }, ...prev])}
+        />
+      )}
+
+      {editingCollection && (
+        <EditCollectionModal
+          collection={editingCollection}
+          onClose={() => setEditingCollection(null)}
+          onUpdated={updated => {
+            setCollections(prev => prev.map(c => c.id === updated.id ? { ...c, ...updated } : c))
+            setEditingCollection(null)
+          }}
         />
       )}
     </Layout>
