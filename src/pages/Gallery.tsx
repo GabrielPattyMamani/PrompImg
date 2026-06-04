@@ -22,27 +22,37 @@ export default function Gallery() {
       .select('*, album_images(count)')
       .order('created_at', { ascending: false })
 
-    if (data) {
-      const enriched = await Promise.all(
-        data.map(async (album) => {
-          const { data: imgData } = await supabase
-            .from('album_images')
-            .select('image_data')
-            .eq('album_id', album.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-
-          return {
-            ...album,
-            image_count: album.album_images?.[0]?.count ?? 0,
-            cover_image: imgData?.image_data ?? null,
-          }
-        })
-      )
-      setAlbums(enriched)
+    if (!data) {
+      setLoading(false)
+      return
     }
+
+    // Mostrar álbumes de inmediato sin esperar portadas
+    setAlbums(data.map(album => ({
+      ...album,
+      image_count: album.album_images?.[0]?.count ?? 0,
+      cover_image: null as string | null,
+    })))
     setLoading(false)
+
+    // Cargar portadas en paralelo en segundo plano
+    await Promise.all(
+      data.map(async (album) => {
+        const { data: imgData } = await supabase
+          .from('album_images')
+          .select('image_data')
+          .eq('album_id', album.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (imgData?.image_data) {
+          setAlbums(prev => prev.map(a =>
+            a.id === album.id ? { ...a, cover_image: imgData.image_data } : a
+          ))
+        }
+      })
+    )
   }
 
   async function deleteAlbum(id: string) {

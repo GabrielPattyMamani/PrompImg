@@ -4,84 +4,48 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import NewContextModal from '../components/NewContextModal'
 import NewPartModal from '../components/NewPartModal'
-import EditContextModal from '../components/EditContextModal'
-import EditPartModal from '../components/EditPartModal'
+import ContentViewModal from '../components/ContentViewModal'
 import type { Novel as NovelType, NovelContext, NovelPart } from '../types'
 
 type Tab = 'contexts' | 'parts'
+type ViewingItem =
+  | { type: 'context'; item: NovelContext; orderNum: number }
+  | { type: 'part'; item: NovelPart; orderNum: number }
 
 function TextCard({
   label,
   title,
   content,
-  onEdit,
+  onClick,
   onDelete,
   accent,
 }: {
   label: string
   title?: string | null
   content: string
-  onEdit: () => void
+  onClick: () => void
   onDelete: () => void
   accent: string
 }) {
-  const [expanded, setExpanded] = useState(false)
-  const [copying, setCopying] = useState(false)
-
-  async function copy() {
-    await navigator.clipboard.writeText(content)
-    setCopying(true)
-    setTimeout(() => setCopying(false), 1500)
-  }
-
   return (
-    <div className="bg-[#1a1a22] border border-white/8 rounded-2xl p-4 hover:border-white/15 transition-colors">
+    <div
+      className="bg-[#1a1a22] border border-white/8 rounded-2xl p-4 hover:border-white/20 transition-colors cursor-pointer group"
+      onClick={onClick}
+    >
       <div className="flex items-center gap-2 mb-3">
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${accent}`}>{label}</span>
         {title && <span className="text-white/60 text-sm font-medium truncate">{title}</span>}
       </div>
-      <p className={`text-white/60 text-sm leading-relaxed whitespace-pre-wrap break-words ${!expanded && 'line-clamp-4'}`}>
+      <p className="text-white/50 text-sm leading-relaxed line-clamp-3 break-words">
         {content}
       </p>
-      {content.length > 300 && (
+      <div className="flex items-center justify-between mt-4">
+        <span className="text-xs text-white/25 group-hover:text-white/40 transition-colors">
+          Toca para leer y editar →
+        </span>
         <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-violet-400 text-xs mt-1.5 hover:text-violet-300 transition-colors"
-        >
-          {expanded ? 'Ver menos' : 'Ver más'}
-        </button>
-      )}
-      <div className="flex items-center gap-2 mt-4">
-        <button
-          onClick={copy}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all"
-        >
-          {copying ? (
-            <>
-              <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-green-400">Copiado</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              Copiar
-            </>
-          )}
-        </button>
-        <span className="flex-1" />
-        <button
-          onClick={onEdit}
-          className="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-violet-500/20 text-white/30 hover:text-violet-400 transition-all"
-        >
-          Editar
-        </button>
-        <button
-          onClick={onDelete}
-          className="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/30 hover:text-red-400 transition-all"
+          onClick={e => { e.stopPropagation(); onDelete() }}
+          className="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/25 hover:text-red-400 transition-all"
         >
           Eliminar
         </button>
@@ -99,8 +63,7 @@ export default function Novel() {
   const [tab, setTab] = useState<Tab>('contexts')
   const [showContextModal, setShowContextModal] = useState(false)
   const [showPartModal, setShowPartModal] = useState(false)
-  const [editingContext, setEditingContext] = useState<NovelContext | null>(null)
-  const [editingPart, setEditingPart] = useState<NovelPart | null>(null)
+  const [viewing, setViewing] = useState<ViewingItem | null>(null)
 
   useEffect(() => {
     if (id) fetchData(id)
@@ -200,9 +163,7 @@ export default function Novel() {
         <button
           onClick={() => setTab('contexts')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            tab === 'contexts'
-              ? 'bg-[#1a1a22] text-white shadow'
-              : 'text-white/40 hover:text-white/70'
+            tab === 'contexts' ? 'bg-[#1a1a22] text-white shadow' : 'text-white/40 hover:text-white/70'
           }`}
         >
           Contextos
@@ -213,9 +174,7 @@ export default function Novel() {
         <button
           onClick={() => setTab('parts')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            tab === 'parts'
-              ? 'bg-[#1a1a22] text-white shadow'
-              : 'text-white/40 hover:text-white/70'
+            tab === 'parts' ? 'bg-[#1a1a22] text-white shadow' : 'text-white/40 hover:text-white/70'
           }`}
         >
           Partes
@@ -247,7 +206,7 @@ export default function Novel() {
                 label={`Contexto ${i + 1}`}
                 title={ctx.title}
                 content={ctx.content}
-                onEdit={() => setEditingContext(ctx)}
+                onClick={() => setViewing({ type: 'context', item: ctx, orderNum: i + 1 })}
                 onDelete={() => deleteContext(ctx.id)}
                 accent="bg-amber-400/10 text-amber-300"
               />
@@ -277,7 +236,7 @@ export default function Novel() {
                 label={`Parte ${i + 1}`}
                 title={part.title}
                 content={part.content}
-                onEdit={() => setEditingPart(part)}
+                onClick={() => setViewing({ type: 'part', item: part, orderNum: i + 1 })}
                 onDelete={() => deletePart(part.id)}
                 accent="bg-violet-400/10 text-violet-300"
               />
@@ -302,25 +261,28 @@ export default function Novel() {
           onCreated={part => setParts(prev => [...prev, part])}
         />
       )}
-      {editingContext && (
-        <EditContextModal
-          context={editingContext}
-          orderNum={contexts.findIndex(c => c.id === editingContext.id) + 1}
-          onClose={() => setEditingContext(null)}
-          onUpdated={updated => {
-            setContexts(prev => prev.map(c => c.id === updated.id ? updated : c))
-            setEditingContext(null)
-          }}
-        />
-      )}
-      {editingPart && (
-        <EditPartModal
-          part={editingPart}
-          orderNum={parts.findIndex(p => p.id === editingPart.id) + 1}
-          onClose={() => setEditingPart(null)}
-          onUpdated={updated => {
-            setParts(prev => prev.map(p => p.id === updated.id ? updated : p))
-            setEditingPart(null)
+
+      {viewing && (
+        <ContentViewModal
+          id={viewing.item.id}
+          table={viewing.type === 'context' ? 'novel_contexts' : 'novel_parts'}
+          label={viewing.type === 'context' ? `Contexto ${viewing.orderNum}` : `Parte ${viewing.orderNum}`}
+          accent={viewing.type === 'context' ? 'bg-amber-400/10 text-amber-300' : 'bg-violet-400/10 text-violet-300'}
+          titleRequired={viewing.type === 'part'}
+          initialTitle={viewing.item.title ?? null}
+          initialContent={viewing.item.content}
+          onClose={() => setViewing(null)}
+          onUpdated={(newTitle, newContent) => {
+            if (viewing.type === 'context') {
+              setContexts(prev => prev.map(c =>
+                c.id === viewing.item.id ? { ...c, title: newTitle, content: newContent } : c
+              ))
+            } else {
+              setParts(prev => prev.map(p =>
+                p.id === viewing.item.id ? { ...p, title: newTitle ?? p.title, content: newContent } : p
+              ))
+            }
+            setViewing(null)
           }}
         />
       )}

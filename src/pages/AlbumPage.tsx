@@ -19,28 +19,39 @@ async function downloadAsPng(imageData: string, filename: string) {
   a.click()
 }
 
-async function toWebP(file: File): Promise<string> {
+async function toWebP(file: File, maxDim = 1920): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
+      let w = img.naturalWidth
+      let h = img.naturalHeight
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim }
+        else { w = Math.round(w * maxDim / h); h = maxDim }
+      }
       const canvas = document.createElement('canvas')
-      canvas.width = img.naturalWidth
-      canvas.height = img.naturalHeight
-      canvas.getContext('2d')!.drawImage(img, 0, 0)
+      canvas.width = w
+      canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
       URL.revokeObjectURL(url)
-      resolve(canvas.toDataURL('image/webp', 0.9))
+      resolve(canvas.toDataURL('image/webp', 0.85))
     }
     img.onerror = reject
     img.src = url
   })
 }
 
+const PAGE_SIZE = 24
+
 export default function AlbumPage() {
   const { id } = useParams<{ id: string }>()
   const [album, setAlbum] = useState<ImageAlbum | null>(null)
   const [images, setImages] = useState<AlbumImage[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [page, setPage] = useState(0)
   const [uploading, setUploading] = useState(false)
   const [lightbox, setLightbox] = useState<AlbumImage | null>(null)
   const [showEdit, setShowEdit] = useState(false)
@@ -55,11 +66,32 @@ export default function AlbumPage() {
   async function fetchData() {
     const [albumRes, imagesRes] = await Promise.all([
       supabase.from('image_albums').select('*').eq('id', id!).single(),
-      supabase.from('album_images').select('*').eq('album_id', id!).order('created_at', { ascending: false }),
+      supabase.from('album_images').select('*').eq('album_id', id!).order('created_at', { ascending: false }).range(0, PAGE_SIZE - 1),
     ])
     if (albumRes.data) setAlbum(albumRes.data as ImageAlbum)
-    if (imagesRes.data) setImages(imagesRes.data as AlbumImage[])
+    if (imagesRes.data) {
+      setImages(imagesRes.data as AlbumImage[])
+      setHasMore(imagesRes.data.length === PAGE_SIZE)
+    }
+    setPage(0)
     setLoading(false)
+  }
+
+  async function loadMore() {
+    setLoadingMore(true)
+    const nextPage = page + 1
+    const { data } = await supabase
+      .from('album_images')
+      .select('*')
+      .eq('album_id', id!)
+      .order('created_at', { ascending: false })
+      .range(nextPage * PAGE_SIZE, (nextPage + 1) * PAGE_SIZE - 1)
+    if (data) {
+      setImages(prev => [...prev, ...data as AlbumImage[]])
+      setHasMore(data.length === PAGE_SIZE)
+      setPage(nextPage)
+    }
+    setLoadingMore(false)
   }
 
   async function uploadFiles(files: File[]) {
@@ -220,41 +252,60 @@ export default function AlbumPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {images.map(img => (
-            <div
-              key={img.id}
-              className="group relative aspect-square bg-[#12121a] rounded-xl overflow-hidden cursor-pointer"
-              onClick={() => setLightbox(img)}
-            >
-              <img
-                src={img.image_data}
-                alt={img.name ?? ''}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-              <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                <button
-                  onClick={e => { e.stopPropagation(); downloadAsPng(img.image_data, img.name ?? 'imagen') }}
-                  className="w-7 h-7 rounded-lg bg-black/60 text-white/70 hover:text-white flex items-center justify-center transition-all"
-                  title="Descargar PNG"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); deleteImage(img.id) }}
-                  className="w-7 h-7 rounded-lg bg-black/60 text-white/70 hover:text-red-400 flex items-center justify-center transition-all text-sm"
-                  title="Eliminar"
-                >
-                  ×
-                </button>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {images.map(img => (
+              <div
+                key={img.id}
+                className="group relative aspect-square bg-[#12121a] rounded-xl overflow-hidden cursor-pointer"
+                onClick={() => setLightbox(img)}
+              >
+                <img
+                  src={img.image_data}
+                  alt={img.name ?? ''}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                  <button
+                    onClick={e => { e.stopPropagation(); downloadAsPng(img.image_data, img.name ?? 'imagen') }}
+                    className="w-7 h-7 rounded-lg bg-black/60 text-white/70 hover:text-white flex items-center justify-center transition-all"
+                    title="Descargar PNG"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); deleteImage(img.id) }}
+                    className="w-7 h-7 rounded-lg bg-black/60 text-white/70 hover:text-red-400 flex items-center justify-center transition-all text-sm"
+                    title="Eliminar"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
+            ))}
+          </div>
+          {hasMore && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-sm transition-colors disabled:opacity-40"
+              >
+                {loadingMore ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                ) : null}
+                {loadingMore ? 'Cargando…' : 'Cargar más'}
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {/* Lightbox */}

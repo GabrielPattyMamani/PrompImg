@@ -22,27 +22,37 @@ export default function Home() {
       .select('*, entries(count)')
       .order('created_at', { ascending: false })
 
-    if (data) {
-      const enriched = await Promise.all(
-        data.map(async (col) => {
-          const { data: imgData } = await supabase
-            .from('entry_images')
-            .select('image_data, entries!inner(collection_id)')
-            .eq('entries.collection_id', col.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-
-          return {
-            ...col,
-            entry_count: col.entries?.[0]?.count ?? 0,
-            cover_image: imgData?.image_data ?? null,
-          }
-        })
-      )
-      setCollections(enriched)
+    if (!data) {
+      setLoading(false)
+      return
     }
+
+    // Mostrar colecciones de inmediato sin esperar portadas
+    setCollections(data.map(col => ({
+      ...col,
+      entry_count: col.entries?.[0]?.count ?? 0,
+      cover_image: null as string | null,
+    })))
     setLoading(false)
+
+    // Cargar portadas en paralelo en segundo plano
+    await Promise.all(
+      data.map(async (col) => {
+        const { data: imgData } = await supabase
+          .from('entry_images')
+          .select('image_data, entries!inner(collection_id)')
+          .eq('entries.collection_id', col.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (imgData?.image_data) {
+          setCollections(prev => prev.map(c =>
+            c.id === col.id ? { ...c, cover_image: imgData.image_data } : c
+          ))
+        }
+      })
+    )
   }
 
   async function deleteCollection(id: string) {
