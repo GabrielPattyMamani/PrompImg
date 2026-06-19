@@ -29,7 +29,7 @@ export default function NovelSummaries() {
 
   function handleCopyAll() {
     const text = partsWithSummary
-      .map((p, i) => `Parte ${parts.indexOf(p) + 1} — ${p.title}\n${p.summary}`)
+      .map((p) => `Parte ${parts.indexOf(p) + 1} — ${p.title}\n${p.summary}`)
       .join('\n\n---\n\n')
     navigator.clipboard.writeText(text).then(() => {
       setAllCopied(true)

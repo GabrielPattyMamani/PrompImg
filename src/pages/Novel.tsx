@@ -17,71 +17,6 @@ type SelectedItem =
   | { type: 'part'; id: string; title: string; content: string; orderNum: number }
   | { type: 'summary'; id: string; partTitle: string; content: string; orderNum: number }
 
-function TextCard({
-  label,
-  title,
-  content,
-  onClick,
-  onDelete,
-  accent,
-}: {
-  label: string
-  title?: string | null
-  content: string
-  onClick: () => void
-  onDelete: () => void
-  accent: string
-}) {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy(e: ReactMouseEvent) {
-    e.stopPropagation()
-    const text = title ? `${title}\n\n${content}` : content
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
-  return (
-    <div
-      className="bg-[#1a1a22] border border-white/8 rounded-2xl p-4 hover:border-white/20 transition-colors cursor-pointer group"
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${accent}`}>{label}</span>
-        {title && <span className="text-white/60 text-sm font-medium truncate">{title}</span>}
-      </div>
-      <p className="text-white/50 text-sm leading-relaxed line-clamp-3 break-words">
-        {content}
-      </p>
-      <div className="flex items-center justify-between mt-4">
-        <span className="text-xs text-white/25 group-hover:text-white/40 transition-colors">
-          Toca para leer y editar →
-        </span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopy}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-all ${
-              copied
-                ? 'bg-green-500/20 text-green-400'
-                : 'bg-white/5 hover:bg-white/10 text-white/25 hover:text-white/60'
-            }`}
-          >
-            {copied ? 'Copiado' : 'Copiar'}
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); onDelete() }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/25 hover:text-red-400 transition-all"
-          >
-            Eliminar
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function PartCard({
   part,
   orderNum,
@@ -91,7 +26,6 @@ function PartCard({
   onToggleSelect,
   isSelected,
   isResumarySelected,
-  checkIsSelected,
 }: {
   part: NovelPart
   orderNum: number
@@ -101,7 +35,6 @@ function PartCard({
   onToggleSelect: (item: SelectedItem) => void
   isSelected: boolean
   isResumarySelected: boolean
-  checkIsSelected: (type: string, id: string) => boolean
 }) {
   const [copied, setCopied] = useState(false)
   const [summaryCopied, setSummaryCopied] = useState(false)
@@ -464,7 +397,7 @@ export default function Novel() {
         ) : (
           <div className="space-y-3 sm:space-y-4">
             {contexts.map((ctx, i) => {
-              const coveredParts = ctx.part_ids?.length ? parts.filter(p => ctx.part_ids?.includes(p.id)).map((p, idx) => parts.indexOf(p) + 1) : []
+              const coveredParts = ctx.part_ids?.length ? parts.filter(p => ctx.part_ids?.includes(p.id)).map((p) => parts.indexOf(p) + 1) : []
               return (
                 <div
                   key={ctx.id}
@@ -563,7 +496,6 @@ export default function Novel() {
                 onToggleSelect={toggleSelectedItem}
                 isSelected={isItemSelected('part', part.id)}
                 isResumarySelected={isItemSelected('summary', part.id)}
-                checkIsSelected={isItemSelected}
               />
             ))}
           </div>
@@ -613,7 +545,7 @@ export default function Novel() {
             <div className="space-y-3 bg-white/2 rounded-2xl border border-white/8 p-4">
               {selectedItems
                 .sort((a, b) => a.orderNum - b.orderNum)
-                .map((item, idx) => (
+                .map((item) => (
                   <div key={`${item.type}-${item.id}`} className="bg-[#1a1a22] border border-white/8 rounded-xl p-3 sm:p-4">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-start gap-2 min-w-0 flex-1">

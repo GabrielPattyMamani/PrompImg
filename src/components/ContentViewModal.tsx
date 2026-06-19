@@ -195,7 +195,7 @@ export default function ContentViewModal({
                   <div className="flex flex-wrap gap-1.5">
                     {parts
                       .filter(p => initialPartIds.includes(p.id))
-                      .map((part, i) => (
+                      .map((part) => (
                         <span key={part.id} className="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">
                           Parte {parts.indexOf(part) + 1}
                         </span>
