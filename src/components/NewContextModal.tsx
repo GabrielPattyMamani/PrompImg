@@ -1,19 +1,27 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import type { NovelContext } from '../types'
+import type { NovelContext, NovelPart } from '../types'
 
 interface Props {
   novelId: string
   orderNum: number
+  parts: NovelPart[]
   onClose: () => void
   onCreated: (ctx: NovelContext) => void
 }
 
-export default function NewContextModal({ novelId, orderNum, onClose, onCreated }: Props) {
+export default function NewContextModal({ novelId, orderNum, parts, onClose, onCreated }: Props) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [selectedParts, setSelectedParts] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  function togglePart(partId: string) {
+    setSelectedParts(prev =>
+      prev.includes(partId) ? prev.filter(id => id !== partId) : [...prev, partId]
+    )
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,6 +35,7 @@ export default function NewContextModal({ novelId, orderNum, onClose, onCreated 
         novel_id: novelId,
         title: title.trim() || null,
         content: content.trim(),
+        part_ids: selectedParts.length > 0 ? selectedParts : null,
         order_num: orderNum,
       })
       .select()
@@ -64,10 +73,33 @@ export default function NewContextModal({ novelId, orderNum, onClose, onCreated 
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder="Pega aquí el contexto que le darás a la IA para que continúe la historia…"
-              rows={10}
+              rows={8}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition-colors resize-none text-sm leading-relaxed"
             />
           </div>
+
+          {parts.length > 0 && (
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">Partes que abarca (opcional)</label>
+              <div className="flex flex-col gap-2 max-h-32 overflow-y-auto bg-white/3 border border-white/8 rounded-xl p-3">
+                {parts.map((part, i) => (
+                  <label key={part.id} className="flex items-center gap-2.5 cursor-pointer hover:bg-white/5 px-2 py-1.5 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={selectedParts.includes(part.id)}
+                      onChange={() => togglePart(part.id)}
+                      className="w-4 h-4 accent-violet-500 cursor-pointer"
+                    />
+                    <span className="text-xs text-white/70">Parte {i + 1} — {part.title}</span>
+                  </label>
+                ))}
+              </div>
+              {selectedParts.length > 0 && (
+                <p className="text-xs text-white/40 mt-1">{selectedParts.length} parte(s) seleccionada(s)</p>
+              )}
+            </div>
+          )}
+
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white transition-colors">

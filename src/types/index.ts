@@ -37,6 +37,7 @@ export interface NovelContext {
   novel_id: string
   title: string | null
   content: string
+  part_ids?: string[] | null
   order_num: number
   created_at: string
 }
@@ -46,6 +47,7 @@ export interface NovelPart {
   novel_id: string
   title: string
   content: string
+  summary?: string | null
   order_num: number
   created_at: string
 }

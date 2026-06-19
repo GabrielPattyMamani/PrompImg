@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import type { NovelPart } from '../types'
 
 interface Props {
   id: string
@@ -10,7 +11,9 @@ interface Props {
   initialTitle: string | null
   initialContent: string
   onClose: () => void
-  onUpdated: (title: string | null, content: string) => void
+  onUpdated: (title: string | null, content: string, partIds?: string[] | null) => void
+  parts?: NovelPart[]
+  initialPartIds?: string[] | null
 }
 
 export default function ContentViewModal({
@@ -23,13 +26,22 @@ export default function ContentViewModal({
   initialContent,
   onClose,
   onUpdated,
+  parts = [],
+  initialPartIds = null,
 }: Props) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(initialTitle ?? '')
   const [content, setContent] = useState(initialContent)
+  const [selectedPartIds, setSelectedPartIds] = useState<string[]>(initialPartIds ?? [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copying, setCopying] = useState(false)
+
+  function togglePart(partId: string) {
+    setSelectedPartIds(prev =>
+      prev.includes(partId) ? prev.filter(id => id !== partId) : [...prev, partId]
+    )
+  }
 
   async function handleSave() {
     if (!content.trim()) return
@@ -37,13 +49,18 @@ export default function ContentViewModal({
     setLoading(true)
     setError('')
 
+    const updateData: any = { title: title.trim() || null, content: content.trim() }
+    if (table === 'novel_contexts') {
+      updateData.part_ids = selectedPartIds.length > 0 ? selectedPartIds : null
+    }
+
     const { error: err } = await supabase
       .from(table)
-      .update({ title: title.trim() || null, content: content.trim() })
+      .update(updateData)
       .eq('id', id)
 
     if (err) { setError(err.message); setLoading(false); return }
-    onUpdated(title.trim() || null, content.trim())
+    onUpdated(title.trim() || null, content.trim(), table === 'novel_contexts' ? selectedPartIds : undefined)
     setEditing(false)
     setLoading(false)
   }
@@ -51,6 +68,7 @@ export default function ContentViewModal({
   function handleCancel() {
     setTitle(initialTitle ?? '')
     setContent(initialContent)
+    setSelectedPartIds(initialPartIds ?? [])
     setError('')
     setEditing(false)
   }
@@ -134,10 +152,33 @@ export default function ContentViewModal({
                 <textarea
                   value={content}
                   onChange={e => setContent(e.target.value)}
-                  rows={14}
+                  rows={12}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition-colors resize-none text-sm leading-relaxed"
                 />
               </div>
+
+              {table === 'novel_contexts' && parts.length > 0 && (
+                <div>
+                  <label className="text-xs text-white/50 mb-2 block">Partes que abarca (opcional)</label>
+                  <div className="flex flex-col gap-2 max-h-32 overflow-y-auto bg-white/3 border border-white/8 rounded-xl p-3">
+                    {parts.map((part, i) => (
+                      <label key={part.id} className="flex items-center gap-2.5 cursor-pointer hover:bg-white/5 px-2 py-1.5 rounded transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedPartIds.includes(part.id)}
+                          onChange={() => togglePart(part.id)}
+                          className="w-4 h-4 accent-violet-500 cursor-pointer"
+                        />
+                        <span className="text-xs text-white/70">Parte {i + 1} — {part.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {selectedPartIds.length > 0 && (
+                    <p className="text-xs text-white/40 mt-1">{selectedPartIds.length} parte(s) seleccionada(s)</p>
+                  )}
+                </div>
+              )}
+
               {error && <p className="text-red-400 text-sm">{error}</p>}
             </div>
           ) : (
@@ -148,6 +189,20 @@ export default function ContentViewModal({
               <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap break-words">
                 {content}
               </p>
+              {table === 'novel_contexts' && initialPartIds && initialPartIds.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-white/8">
+                  <p className="text-xs text-white/50 mb-2">Partes que abarca:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {parts
+                      .filter(p => initialPartIds.includes(p.id))
+                      .map((part, i) => (
+                        <span key={part.id} className="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">
+                          Parte {parts.indexOf(part) + 1}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
