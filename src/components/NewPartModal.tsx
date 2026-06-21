@@ -4,12 +4,13 @@ import type { NovelPart } from '../types'
 
 interface Props {
   novelId: string
+  chapterId?: string
   orderNum: number
   onClose: () => void
   onCreated: (part: NovelPart) => void
 }
 
-export default function NewPartModal({ novelId, orderNum, onClose, onCreated }: Props) {
+export default function NewPartModal({ novelId, chapterId, orderNum, onClose, onCreated }: Props) {
   const [title, setTitle] = useState(`Parte ${orderNum}`)
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
@@ -25,6 +26,7 @@ export default function NewPartModal({ novelId, orderNum, onClose, onCreated }: 
       .from('novel_parts')
       .insert({
         novel_id: novelId,
+        chapter_id: chapterId || null,
         title: title.trim(),
         content: content.trim(),
         order_num: orderNum,

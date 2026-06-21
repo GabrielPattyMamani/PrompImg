@@ -30,6 +30,7 @@ export interface Novel {
   created_at: string
   context_count?: number
   part_count?: number
+  chapter_count?: number
 }
 
 export interface NovelContext {
@@ -42,9 +43,20 @@ export interface NovelContext {
   created_at: string
 }
 
+export interface NovelChapter {
+  id: string
+  novel_id: string
+  title: string
+  context?: string | null
+  summary?: string | null
+  order_num: number
+  created_at: string
+}
+
 export interface NovelPart {
   id: string
   novel_id: string
+  chapter_id?: string | null
   title: string
   content: string
   summary?: string | null

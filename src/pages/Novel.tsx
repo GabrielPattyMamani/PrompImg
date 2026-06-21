@@ -5,10 +5,11 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import NewContextModal from '../components/NewContextModal'
 import NewPartModal from '../components/NewPartModal'
+import NewChapterModal from '../components/NewChapterModal'
 import ContentViewModal from '../components/ContentViewModal'
-import type { Novel as NovelType, NovelContext, NovelPart } from '../types'
+import type { Novel as NovelType, NovelContext, NovelPart, NovelChapter } from '../types'
 
-type Tab = 'contexts' | 'parts' | 'compiled'
+type Tab = 'contexts' | 'parts' | 'chapters' | 'compiled'
 type ViewingItem =
   | { type: 'context'; item: NovelContext; orderNum: number }
   | { type: 'part'; item: NovelPart; orderNum: number }
@@ -206,11 +207,14 @@ export default function Novel() {
   const { id } = useParams<{ id: string }>()
   const [novel, setNovel] = useState<NovelType | null>(null)
   const [contexts, setContexts] = useState<NovelContext[]>([])
+  const [chapters, setChapters] = useState<NovelChapter[]>([])
   const [parts, setParts] = useState<NovelPart[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>('contexts')
+  const [tab, setTab] = useState<Tab>('chapters')
   const [showContextModal, setShowContextModal] = useState(false)
   const [showPartModal, setShowPartModal] = useState(false)
+  const [showChapterModal, setShowChapterModal] = useState(false)
+  const [selectedChapterId, setSelectedChapterId] = useState<string | undefined>(undefined)
   const [viewing, setViewing] = useState<ViewingItem | null>(null)
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
 
@@ -219,13 +223,15 @@ export default function Novel() {
   }, [id])
 
   async function fetchData(novelId: string) {
-    const [{ data: nov }, { data: ctx }, { data: pts }] = await Promise.all([
+    const [{ data: nov }, { data: ctx }, { data: chp }, { data: pts }] = await Promise.all([
       supabase.from('novels').select('*').eq('id', novelId).single(),
       supabase.from('novel_contexts').select('*').eq('novel_id', novelId).order('order_num').order('created_at'),
+      supabase.from('novel_chapters').select('*').eq('novel_id', novelId).order('order_num').order('created_at'),
       supabase.from('novel_parts').select('*').eq('novel_id', novelId).order('order_num').order('created_at'),
     ])
     if (nov) setNovel(nov)
     if (ctx) setContexts(ctx)
+    if (chp) setChapters(chp)
     if (pts) setParts(pts)
     setLoading(false)
   }
@@ -234,6 +240,13 @@ export default function Novel() {
     if (!confirm('¿Eliminar este contexto?')) return
     await supabase.from('novel_contexts').delete().eq('id', ctxId)
     setContexts(prev => prev.filter(c => c.id !== ctxId))
+  }
+
+  async function deleteChapter(chapterId: string) {
+    if (!confirm('¿Eliminar este capítulo y todas sus partes?')) return
+    await supabase.from('novel_chapters').delete().eq('id', chapterId)
+    setChapters(prev => prev.filter(c => c.id !== chapterId))
+    setParts(prev => prev.filter(p => p.chapter_id !== chapterId))
   }
 
   async function deletePart(partId: string) {
@@ -330,19 +343,34 @@ export default function Novel() {
             </Link>
           )}
           <button
-            onClick={() => tab === 'contexts' ? setShowContextModal(true) : setShowPartModal(true)}
+            onClick={() => {
+              if (tab === 'contexts') setShowContextModal(true)
+              else if (tab === 'chapters') setShowChapterModal(true)
+              else setShowPartModal(true)
+            }}
             className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg sm:rounded-xl font-medium text-sm transition-colors order-3 sm:order-none"
           >
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span>{tab === 'contexts' ? 'Contexto' : 'Parte'}</span>
+            <span>{tab === 'contexts' ? 'Contexto' : tab === 'chapters' ? 'Capítulo' : 'Parte'}</span>
           </button>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-white/5 rounded-lg sm:rounded-xl w-full sm:w-fit mb-6 overflow-x-auto">
+        <button
+          onClick={() => setTab('chapters')}
+          className={`flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+            tab === 'chapters' ? 'bg-[#1a1a22] text-white shadow' : 'text-white/40 hover:text-white/70'
+          }`}
+        >
+          Capítulos
+          <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === 'chapters' ? 'bg-green-400/20 text-green-300' : 'bg-white/5 text-white/30'}`}>
+            {chapters.length}
+          </span>
+        </button>
         <button
           onClick={() => setTab('contexts')}
           className={`flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
@@ -470,6 +498,135 @@ export default function Novel() {
         )
       )}
 
+      {tab === 'chapters' && (
+        chapters.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
+              <svg className="w-7 h-7 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <p className="text-white/30 text-sm">No hay capítulos todavía</p>
+            <button onClick={() => setShowChapterModal(true)} className="text-green-400 hover:text-green-300 text-sm transition-colors">
+              Crear el primero →
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3 sm:space-y-4">
+            {chapters.map((chapter, i) => {
+              const chapterParts = parts.filter(p => p.chapter_id === chapter.id)
+              return (
+                <div
+                  key={chapter.id}
+                  className="border border-white/8 rounded-xl sm:rounded-2xl overflow-hidden bg-[#1a1a22] hover:border-white/20 transition-colors"
+                >
+                  {/* Chapter Header */}
+                  <div className="p-3 sm:p-4 border-b border-white/8 flex items-start gap-3">
+                    <div>
+                      <div className="flex items-start gap-2 mb-2">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-400/10 text-green-300 whitespace-nowrap flex-shrink-0">
+                          Capítulo {i + 1}
+                        </span>
+                        <span className="text-white/60 text-xs sm:text-sm font-medium line-clamp-2 flex-1">{chapter.title}</span>
+                      </div>
+                      {(chapter.context || chapter.summary) && (
+                        <div className="flex gap-2 mt-2">
+                          {chapter.context && <span className="text-xs px-2 py-1 rounded-full bg-blue-400/10 text-blue-300">Contexto</span>}
+                          {chapter.summary && <span className="text-xs px-2 py-1 rounded-full bg-purple-400/10 text-purple-300">Resumen</span>}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => {
+                          setSelectedChapterId(selectedChapterId === chapter.id ? undefined : chapter.id)
+                        }}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/60 hover:bg-white/10 transition-all text-lg"
+                      >
+                        {selectedChapterId === chapter.id ? '−' : '+'}
+                      </button>
+                      <button
+                        onClick={() => deleteChapter(chapter.id)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-red-500/20 transition-all text-lg"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Context/Summary expandible */}
+                  {selectedChapterId === chapter.id && (chapter.context || chapter.summary) && (
+                    <div className="border-b border-white/8">
+                      {chapter.context && (
+                        <div className="p-3 sm:p-4 bg-blue-500/5 border-b border-white/8">
+                          <p className="text-xs text-blue-300 font-medium mb-2">Contexto</p>
+                          <p className="text-white/60 text-xs sm:text-sm leading-relaxed">{chapter.context}</p>
+                        </div>
+                      )}
+                      {chapter.summary && (
+                        <div className="p-3 sm:p-4 bg-purple-500/5">
+                          <p className="text-xs text-purple-300 font-medium mb-2">Resumen</p>
+                          <p className="text-white/60 text-xs sm:text-sm leading-relaxed">{chapter.summary}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Parts inside chapter */}
+                  {selectedChapterId === chapter.id && (
+                    <div className="border-t border-white/8 p-3 sm:p-4 space-y-2">
+                      {chapterParts.length === 0 ? (
+                        <div className="py-6 flex flex-col items-center justify-center gap-3">
+                          <p className="text-white/30 text-sm">No hay partes en este capítulo</p>
+                          <button
+                            onClick={() => {
+                              setSelectedChapterId(chapter.id)
+                              setShowPartModal(true)
+                            }}
+                            className="text-violet-400 hover:text-violet-300 text-xs transition-colors"
+                          >
+                            Agregar la primera →
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {chapterParts.map((part, partIdx) => (
+                            <div key={part.id} className="bg-white/2 border border-white/8 rounded-lg p-2.5 sm:p-3">
+                              <div className="flex items-start gap-2 mb-1">
+                                <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-violet-400/10 text-violet-300 whitespace-nowrap flex-shrink-0">
+                                  Parte {partIdx + 1}
+                                </span>
+                                <span className="text-white/60 text-xs sm:text-sm font-medium line-clamp-1 flex-1">{part.title}</span>
+                                <button
+                                  onClick={() => deletePart(part.id)}
+                                  className="text-white/40 hover:text-red-400 text-sm transition-colors flex-shrink-0"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                              <p className="text-white/50 text-xs sm:text-sm leading-relaxed line-clamp-2 break-words">{part.content}</p>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => {
+                              setSelectedChapterId(chapter.id)
+                              setShowPartModal(true)
+                            }}
+                            className="w-full py-2 rounded-lg border border-white/8 hover:border-white/20 text-white/40 hover:text-white/60 text-xs font-medium transition-colors"
+                          >
+                            + Agregar parte
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      )}
+
       {tab === 'parts' && (
         parts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -588,10 +745,25 @@ export default function Novel() {
           onCreated={ctx => setContexts(prev => [...prev, ctx])}
         />
       )}
+      {showChapterModal && (
+        <NewChapterModal
+          novelId={novel.id}
+          orderNum={chapters.length + 1}
+          onClose={() => setShowChapterModal(false)}
+          onCreated={chapter => {
+            setChapters(prev => [...prev, chapter])
+            setSelectedChapterId(chapter.id)
+          }}
+        />
+      )}
       {showPartModal && (
         <NewPartModal
           novelId={novel.id}
-          orderNum={parts.length + 1}
+          chapterId={selectedChapterId}
+          orderNum={selectedChapterId
+            ? (parts.filter(p => p.chapter_id === selectedChapterId).length + 1)
+            : (parts.filter(p => !p.chapter_id).length + 1)
+          }
           onClose={() => setShowPartModal(false)}
           onCreated={part => setParts(prev => [...prev, part])}
         />

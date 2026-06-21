@@ -42,12 +42,24 @@ create table if not exists novel_contexts (
   created_at timestamptz default now()
 );
 
-create table if not exists novel_parts (
+create table if not exists novel_chapters (
   id        uuid primary key default gen_random_uuid(),
   novel_id  uuid references novels(id) on delete cascade not null,
   title     text not null,
-  content   text not null,
+  context   text,
+  summary   text,
   order_num int default 0,
+  created_at timestamptz default now()
+);
+
+create table if not exists novel_parts (
+  id         uuid primary key default gen_random_uuid(),
+  novel_id   uuid references novels(id) on delete cascade not null,
+  chapter_id uuid references novel_chapters(id) on delete cascade,
+  title      text not null,
+  content    text not null,
+  summary    text,
+  order_num  int default 0,
   created_at timestamptz default now()
 );
 
@@ -72,20 +84,22 @@ create table if not exists album_images (
 -- ================================================
 -- PASO 4 — Permisos (RLS)
 -- ================================================
-alter table collections   enable row level security;
-alter table entries        enable row level security;
-alter table entry_images   enable row level security;
-alter table novels         enable row level security;
-alter table novel_contexts enable row level security;
-alter table novel_parts    enable row level security;
-alter table image_albums   enable row level security;
-alter table album_images   enable row level security;
+alter table collections    enable row level security;
+alter table entries         enable row level security;
+alter table entry_images    enable row level security;
+alter table novels          enable row level security;
+alter table novel_contexts  enable row level security;
+alter table novel_chapters  enable row level security;
+alter table novel_parts     enable row level security;
+alter table image_albums    enable row level security;
+alter table album_images    enable row level security;
 
-create policy "allow all" on collections   for all using (true) with check (true);
-create policy "allow all" on entries       for all using (true) with check (true);
-create policy "allow all" on entry_images  for all using (true) with check (true);
-create policy "allow all" on novels        for all using (true) with check (true);
+create policy "allow all" on collections    for all using (true) with check (true);
+create policy "allow all" on entries        for all using (true) with check (true);
+create policy "allow all" on entry_images   for all using (true) with check (true);
+create policy "allow all" on novels         for all using (true) with check (true);
 create policy "allow all" on novel_contexts for all using (true) with check (true);
-create policy "allow all" on novel_parts   for all using (true) with check (true);
-create policy "allow all" on image_albums  for all using (true) with check (true);
-create policy "allow all" on album_images  for all using (true) with check (true);
+create policy "allow all" on novel_chapters for all using (true) with check (true);
+create policy "allow all" on novel_parts    for all using (true) with check (true);
+create policy "allow all" on image_albums   for all using (true) with check (true);
+create policy "allow all" on album_images   for all using (true) with check (true);

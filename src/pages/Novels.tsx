@@ -20,6 +20,7 @@ export default function Novels() {
       .select(`
         *,
         novel_contexts(count),
+        novel_chapters(count),
         novel_parts(count)
       `)
       .order('created_at', { ascending: false })
@@ -29,6 +30,7 @@ export default function Novels() {
         data.map(n => ({
           ...n,
           context_count: n.novel_contexts?.[0]?.count ?? 0,
+          chapter_count: n.novel_chapters?.[0]?.count ?? 0,
           part_count: n.novel_parts?.[0]?.count ?? 0,
         }))
       )
@@ -106,6 +108,10 @@ export default function Novels() {
                 </div>
                 <div className="flex gap-3">
                   <span className="flex items-center gap-1.5 text-xs text-white/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400/60" />
+                    {novel.chapter_count} {novel.chapter_count === 1 ? 'capítulo' : 'capítulos'}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-white/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60" />
                     {novel.context_count} {novel.context_count === 1 ? 'contexto' : 'contextos'}
                   </span>
@@ -129,7 +135,7 @@ export default function Novels() {
       {showModal && (
         <NewNovelModal
           onClose={() => setShowModal(false)}
-          onCreated={novel => setNovels(prev => [{ ...novel, context_count: 0, part_count: 0 }, ...prev])}
+          onCreated={novel => setNovels(prev => [{ ...novel, context_count: 0, chapter_count: 0, part_count: 0 }, ...prev])}
         />
       )}
     </Layout>
