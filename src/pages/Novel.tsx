@@ -6,6 +6,7 @@ import Layout from '../components/Layout'
 import NewContextModal from '../components/NewContextModal'
 import NewPartModal from '../components/NewPartModal'
 import NewChapterModal from '../components/NewChapterModal'
+import AssignPartsToChapterModal from '../components/AssignPartsToChapterModal'
 import ContentViewModal from '../components/ContentViewModal'
 import type { Novel as NovelType, NovelContext, NovelPart, NovelChapter } from '../types'
 
@@ -214,6 +215,7 @@ export default function Novel() {
   const [showContextModal, setShowContextModal] = useState(false)
   const [showPartModal, setShowPartModal] = useState(false)
   const [showChapterModal, setShowChapterModal] = useState(false)
+  const [showAssignPartsModal, setShowAssignPartsModal] = useState(false)
   const [selectedChapterId, setSelectedChapterId] = useState<string | undefined>(undefined)
   const [viewing, setViewing] = useState<ViewingItem | null>(null)
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
@@ -542,12 +544,26 @@ export default function Novel() {
                           setSelectedChapterId(selectedChapterId === chapter.id ? undefined : chapter.id)
                         }}
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/60 hover:bg-white/10 transition-all text-lg"
+                        title="Expandir/Contraer"
                       >
                         {selectedChapterId === chapter.id ? '−' : '+'}
                       </button>
+                      {selectedChapterId === chapter.id && parts.some(p => !p.chapter_id) && (
+                        <button
+                          onClick={() => {
+                            setSelectedChapterId(chapter.id)
+                            setShowAssignPartsModal(true)
+                          }}
+                          className="px-2 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-blue-400 hover:bg-blue-500/20 transition-all text-sm font-medium"
+                          title="Agregar partes existentes"
+                        >
+                          📎
+                        </button>
+                      )}
                       <button
                         onClick={() => deleteChapter(chapter.id)}
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-red-500/20 transition-all text-lg"
+                        title="Eliminar capítulo"
                       >
                         ×
                       </button>
@@ -766,6 +782,20 @@ export default function Novel() {
           }
           onClose={() => setShowPartModal(false)}
           onCreated={part => setParts(prev => [...prev, part])}
+        />
+      )}
+      {showAssignPartsModal && selectedChapterId && (
+        <AssignPartsToChapterModal
+          chapterId={selectedChapterId}
+          parts={parts}
+          onClose={() => setShowAssignPartsModal(false)}
+          onAssigned={assignedParts => {
+            setParts(prev => prev.map(p =>
+              assignedParts.some(ap => ap.id === p.id)
+                ? { ...p, chapter_id: selectedChapterId }
+                : p
+            ))
+          }}
         />
       )}
 
