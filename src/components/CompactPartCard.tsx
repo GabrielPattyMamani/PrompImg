@@ -7,7 +7,7 @@ interface Props {
   partIdx: number
   onDelete: () => void
   onSummaryChange: (id: string, summary: string) => void
-  onEdit: () => void
+  onExpandClick: () => void
 }
 
 export default function CompactPartCard({
@@ -15,7 +15,7 @@ export default function CompactPartCard({
   partIdx,
   onDelete,
   onSummaryChange,
-  onEdit,
+  onExpandClick,
 }: Props) {
   const [copied, setCopied] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
@@ -42,9 +42,12 @@ export default function CompactPartCard({
   }
 
   return (
-    <div className="bg-white/2 border border-white/8 rounded-lg overflow-hidden">
-      {/* Part header */}
-      <div className="p-2.5 sm:p-3 flex items-start gap-2">
+    <div className="bg-white/2 border border-white/8 rounded-lg overflow-hidden hover:border-white/20 transition-colors">
+      {/* Part header - clickeable para expandir */}
+      <div
+        onClick={onExpandClick}
+        className="p-2.5 sm:p-3 flex items-start gap-2 cursor-pointer hover:bg-white/3 transition-colors"
+      >
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2 mb-1">
             <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-violet-400/10 text-violet-300 whitespace-nowrap flex-shrink-0">
@@ -55,7 +58,10 @@ export default function CompactPartCard({
           <p className="text-white/50 text-xs leading-relaxed line-clamp-2 break-words">{part.content}</p>
         </div>
         <button
-          onClick={onDelete}
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
           className="text-white/40 hover:text-red-400 text-sm transition-colors flex-shrink-0 mt-0.5"
           title="Eliminar"
         >
@@ -84,11 +90,11 @@ export default function CompactPartCard({
           {copied ? '✓' : 'Copiar'}
         </button>
         <button
-          onClick={onEdit}
+          onClick={onExpandClick}
           className="flex-1 px-2 py-1.5 rounded text-xs font-medium bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 hover:text-violet-200 transition-all"
-          title="Editar parte"
+          title="Leer y editar parte"
         >
-          Editar
+          Leer
         </button>
         <button
           onClick={() => setSummaryOpen(!summaryOpen)}

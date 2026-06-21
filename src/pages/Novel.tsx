@@ -614,7 +614,7 @@ export default function Novel() {
                               partIdx={partIdx}
                               onDelete={() => deletePart(part.id)}
                               onSummaryChange={handleSummaryUpdate}
-                              onEdit={() => setViewing({ type: 'part', item: part, orderNum: partIdx + 1 })}
+                              onExpandClick={() => setViewing({ type: 'part', item: part, orderNum: partIdx + 1 })}
                             />
                           ))}
                           <button
