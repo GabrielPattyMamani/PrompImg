@@ -615,6 +615,9 @@ export default function Novel() {
                               onDelete={() => deletePart(part.id)}
                               onSummaryChange={handleSummaryUpdate}
                               onExpandClick={() => setViewing({ type: 'part', item: part, orderNum: partIdx + 1 })}
+                              onToggleSelect={toggleSelectedItem}
+                              isSelected={isItemSelected('part', part.id)}
+                              isSummarySelected={isItemSelected('summary', part.id)}
                             />
                           ))}
                           <button

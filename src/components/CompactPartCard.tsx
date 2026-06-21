@@ -2,12 +2,19 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { NovelPart } from '../types'
 
+type SelectedItem =
+  | { type: 'part'; id: string; title: string; content: string; orderNum: number }
+  | { type: 'summary'; id: string; partTitle: string; content: string; orderNum: number }
+
 interface Props {
   part: NovelPart
   partIdx: number
   onDelete: () => void
   onSummaryChange: (id: string, summary: string) => void
   onExpandClick: () => void
+  onToggleSelect?: (item: SelectedItem) => void
+  isSelected?: boolean
+  isSummarySelected?: boolean
 }
 
 export default function CompactPartCard({
@@ -16,6 +23,9 @@ export default function CompactPartCard({
   onDelete,
   onSummaryChange,
   onExpandClick,
+  onToggleSelect,
+  isSelected = false,
+  isSummarySelected = false,
 }: Props) {
   const [copied, setCopied] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
@@ -42,13 +52,32 @@ export default function CompactPartCard({
   }
 
   return (
-    <div className="bg-white/2 border border-white/8 rounded-lg overflow-hidden hover:border-white/20 transition-colors">
+    <div className={`border rounded-lg overflow-hidden hover:border-white/20 transition-colors ${
+      isSelected ? 'bg-violet-500/5 border-violet-500/50' : 'bg-white/2 border-white/8'
+    }`}>
       {/* Part header - clickeable para expandir */}
       <div
-        onClick={onExpandClick}
         className="p-2.5 sm:p-3 flex items-start gap-2 cursor-pointer hover:bg-white/3 transition-colors"
       >
-        <div className="flex-1 min-w-0">
+        {onToggleSelect && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect({
+              type: 'part',
+              id: part.id,
+              title: part.title,
+              content: part.content,
+              orderNum: partIdx + 1
+            })}
+            className="w-4 h-4 mt-0.5 accent-violet-500 cursor-pointer flex-shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+        <div
+          onClick={onExpandClick}
+          className="flex-1 min-w-0"
+        >
           <div className="flex items-start gap-2 mb-1">
             <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-violet-400/10 text-violet-300 whitespace-nowrap flex-shrink-0">
               Parte {partIdx + 1}
@@ -71,8 +100,27 @@ export default function CompactPartCard({
 
       {/* Summary section */}
       {summary.trim() && (
-        <div className="border-t border-white/8 px-2.5 sm:px-3 py-2 bg-white/1">
-          <p className="text-xs text-white/40 font-medium mb-1">Resumen: <span className="text-white/50">{summary.slice(0, 40)}…</span></p>
+        <div className="border-t border-white/8 px-2.5 sm:px-3 py-1.5 bg-white/1 flex items-center gap-2">
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={isSummarySelected}
+              onChange={() => {
+                if (summary.trim()) {
+                  onToggleSelect({
+                    type: 'summary',
+                    id: part.id,
+                    partTitle: part.title,
+                    content: summary,
+                    orderNum: partIdx + 1
+                  })
+                }
+              }}
+              disabled={!summary.trim()}
+              className={`w-4 h-4 accent-blue-500 cursor-pointer flex-shrink-0 ${!summary.trim() ? 'opacity-40 cursor-not-allowed' : ''}`}
+            />
+          )}
+          <p className="text-xs text-white/40 font-medium flex-1">Res: <span className="text-white/50">{summary.slice(0, 30)}…</span></p>
         </div>
       )}
 
