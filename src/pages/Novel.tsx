@@ -8,6 +8,7 @@ import NewPartModal from '../components/NewPartModal'
 import NewChapterModal from '../components/NewChapterModal'
 import AssignPartsToChapterModal from '../components/AssignPartsToChapterModal'
 import CompactPartCard from '../components/CompactPartCard'
+import ChapterDetailsSection from '../components/ChapterDetailsSection'
 import ContentViewModal from '../components/ContentViewModal'
 import type { Novel as NovelType, NovelContext, NovelPart, NovelChapter } from '../types'
 
@@ -571,22 +572,21 @@ export default function Novel() {
                     </div>
                   </div>
 
-                  {/* Context/Summary expandible */}
-                  {selectedChapterId === chapter.id && (chapter.context || chapter.summary) && (
-                    <div className="border-b border-white/8">
-                      {chapter.context && (
-                        <div className="p-3 sm:p-4 bg-blue-500/5 border-b border-white/8">
-                          <p className="text-xs text-blue-300 font-medium mb-2">Contexto</p>
-                          <p className="text-white/60 text-xs sm:text-sm leading-relaxed">{chapter.context}</p>
-                        </div>
-                      )}
-                      {chapter.summary && (
-                        <div className="p-3 sm:p-4 bg-purple-500/5">
-                          <p className="text-xs text-purple-300 font-medium mb-2">Resumen</p>
-                          <p className="text-white/60 text-xs sm:text-sm leading-relaxed">{chapter.summary}</p>
-                        </div>
-                      )}
-                    </div>
+                  {/* Context/Summary section */}
+                  {selectedChapterId === chapter.id && (
+                    <ChapterDetailsSection
+                      chapter={chapter}
+                      onContextChange={(newContext) => {
+                        setChapters(prev => prev.map(c =>
+                          c.id === chapter.id ? { ...c, context: newContext } : c
+                        ))
+                      }}
+                      onSummaryChange={(newSummary) => {
+                        setChapters(prev => prev.map(c =>
+                          c.id === chapter.id ? { ...c, summary: newSummary } : c
+                        ))
+                      }}
+                    />
                   )}
 
                   {/* Parts inside chapter */}
