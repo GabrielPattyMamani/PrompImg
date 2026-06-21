@@ -20,8 +20,6 @@ type SelectedItem =
   | { type: 'context'; id: string; title: string; content: string; orderNum: number }
   | { type: 'part'; id: string; title: string; content: string; orderNum: number }
   | { type: 'summary'; id: string; partTitle: string; content: string; orderNum: number }
-  | { type: 'chapterContext'; id: string; chapterTitle: string; content: string; orderNum: number }
-  | { type: 'chapterSummary'; id: string; chapterTitle: string; content: string; orderNum: number }
 
 function PartCard({
   part,
@@ -574,63 +572,21 @@ export default function Novel() {
                     </div>
                   </div>
 
-                  {/* Context/Summary section with selection */}
+                  {/* Context/Summary section */}
                   {selectedChapterId === chapter.id && (
-                    <div className="border-b border-white/8 bg-white/1">
-                      <ChapterDetailsSection
-                        chapter={chapter}
-                        onContextChange={(newContext) => {
-                          setChapters(prev => prev.map(c =>
-                            c.id === chapter.id ? { ...c, context: newContext } : c
-                          ))
-                        }}
-                        onSummaryChange={(newSummary) => {
-                          setChapters(prev => prev.map(c =>
-                            c.id === chapter.id ? { ...c, summary: newSummary } : c
-                          ))
-                        }}
-                      />
-
-                      {/* Selection checkboxes */}
-                      {(chapter.context || chapter.summary) && (
-                        <div className="p-3 sm:p-4 space-y-2 border-t border-white/8 bg-white/2">
-                          {chapter.context && (
-                            <label className="flex items-center gap-2 p-2 hover:bg-white/5 rounded cursor-pointer transition-colors">
-                              <input
-                                type="checkbox"
-                                checked={isItemSelected('chapterContext', chapter.id)}
-                                onChange={() => toggleSelectedItem({
-                                  type: 'chapterContext',
-                                  id: chapter.id,
-                                  chapterTitle: chapter.title,
-                                  content: chapter.context!,
-                                  orderNum: chapters.indexOf(chapter) + 1
-                                })}
-                                className="w-4 h-4 accent-blue-500 cursor-pointer"
-                              />
-                              <span className="text-xs text-blue-300 font-medium">Contexto del capítulo</span>
-                            </label>
-                          )}
-                          {chapter.summary && (
-                            <label className="flex items-center gap-2 p-2 hover:bg-white/5 rounded cursor-pointer transition-colors">
-                              <input
-                                type="checkbox"
-                                checked={isItemSelected('chapterSummary', chapter.id)}
-                                onChange={() => toggleSelectedItem({
-                                  type: 'chapterSummary',
-                                  id: chapter.id,
-                                  chapterTitle: chapter.title,
-                                  content: chapter.summary!,
-                                  orderNum: chapters.indexOf(chapter) + 1
-                                })}
-                                className="w-4 h-4 accent-purple-500 cursor-pointer"
-                              />
-                              <span className="text-xs text-purple-300 font-medium">Resumen del capítulo</span>
-                            </label>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <ChapterDetailsSection
+                      chapter={chapter}
+                      onContextChange={(newContext) => {
+                        setChapters(prev => prev.map(c =>
+                          c.id === chapter.id ? { ...c, context: newContext } : c
+                        ))
+                      }}
+                      onSummaryChange={(newSummary) => {
+                        setChapters(prev => prev.map(c =>
+                          c.id === chapter.id ? { ...c, summary: newSummary } : c
+                        ))
+                      }}
+                    />
                   )}
 
                   {/* Parts inside chapter */}
@@ -731,12 +687,8 @@ export default function Novel() {
                         return `CONTEXTO ${item.orderNum}${item.title ? ` — ${item.title}` : ''}\n\n${item.content}`
                       } else if (item.type === 'part') {
                         return `PARTE ${item.orderNum} — ${item.title}\n\n${item.content}`
-                      } else if (item.type === 'summary') {
-                        return `RESUMEN PARTE ${item.orderNum} — ${item.partTitle}\n\n${item.content}`
-                      } else if (item.type === 'chapterContext') {
-                        return `CONTEXTO CAPÍTULO ${item.orderNum} — ${item.chapterTitle}\n\n${item.content}`
                       } else {
-                        return `RESUMEN CAPÍTULO ${item.orderNum} — ${item.chapterTitle}\n\n${item.content}`
+                        return `RESUMEN PARTE ${item.orderNum} — ${item.partTitle}\n\n${item.content}`
                       }
                     })
                     .join(separator)
@@ -767,20 +719,14 @@ export default function Novel() {
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${
                           item.type === 'context' ? 'bg-amber-400/10 text-amber-300' :
                           item.type === 'part' ? 'bg-violet-400/10 text-violet-300' :
-                          item.type === 'summary' ? 'bg-blue-400/10 text-blue-300' :
-                          item.type === 'chapterContext' ? 'bg-cyan-400/10 text-cyan-300' :
-                          'bg-pink-400/10 text-pink-300'
+                          'bg-blue-400/10 text-blue-300'
                         }`}>
                           {item.type === 'context' ? `Contexto ${item.orderNum}` :
                            item.type === 'part' ? `Parte ${item.orderNum}` :
-                           item.type === 'summary' ? `Resumen P${item.orderNum}` :
-                           item.type === 'chapterContext' ? `Ctx Cap ${item.orderNum}` :
-                           `Res Cap ${item.orderNum}`}
+                           `Resumen P${item.orderNum}`}
                         </span>
                         <span className="text-white/60 text-xs sm:text-sm font-medium line-clamp-1 min-w-0">
-                          {item.type === 'summary' ? item.partTitle :
-                           item.type === 'chapterContext' || item.type === 'chapterSummary' ? item.chapterTitle :
-                           item.title}
+                          {item.type === 'summary' ? item.partTitle : item.title}
                         </span>
                       </div>
                       <button
