@@ -31,13 +31,25 @@ export default function CompactPartCard({
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [summary, setSummary] = useState(part.summary ?? '')
   const [savedSummary, setSavedSummary] = useState(part.summary ?? '')
+  const [draftOpen, setDraftOpen] = useState(false)
+  const [draft, setDraft] = useState(part.draft ?? '')
+  const [savedDraft, setSavedDraft] = useState(part.draft ?? '')
   const [saving, setSaving] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
 
   function handleCopy() {
     navigator.clipboard.writeText(`${part.title}\n\n${part.content}`).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  async function handleDraftBlur() {
+    if (draft === savedDraft) return
+    setSavingDraft(true)
+    const { error } = await supabase.from('novel_parts').update({ draft: draft.trim() || null }).eq('id', part.id)
+    setSavingDraft(false)
+    if (!error) setSavedDraft(draft)
   }
 
   async function handleSummaryBlur() {
@@ -98,6 +110,19 @@ export default function CompactPartCard({
         </button>
       </div>
 
+      {/* Draft indicator */}
+      {draft.trim() && !draftOpen && (
+        <div
+          className="border-t border-white/8 px-2.5 sm:px-3 py-1.5 bg-amber-500/5 flex items-center gap-2 cursor-pointer hover:bg-amber-500/8 transition-colors"
+          onClick={() => setDraftOpen(true)}
+        >
+          <svg className="w-3 h-3 text-amber-400/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          <p className="text-xs text-amber-400/60 font-medium flex-1">Borrador: <span className="text-amber-400/80">{draft.slice(0, 40)}…</span></p>
+        </div>
+      )}
+
       {/* Summary section */}
       {summary.trim() && (
         <div className="border-t border-white/8 px-2.5 sm:px-3 py-1.5 bg-white/1 flex items-center gap-2">
@@ -145,7 +170,20 @@ export default function CompactPartCard({
           Leer
         </button>
         <button
-          onClick={() => setSummaryOpen(!summaryOpen)}
+          onClick={() => { setDraftOpen(!draftOpen); if (!draftOpen) setSummaryOpen(false) }}
+          className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${
+            draftOpen
+              ? 'bg-amber-500/30 text-amber-200'
+              : draft.trim()
+                ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200'
+                : 'bg-white/8 hover:bg-amber-500/15 text-white/40 hover:text-amber-300'
+          }`}
+          title="Borrador"
+        >
+          {draftOpen ? 'Cerrar' : 'Borrador'}
+        </button>
+        <button
+          onClick={() => { setSummaryOpen(!summaryOpen); if (!summaryOpen) setDraftOpen(false) }}
           className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${
             summary.trim()
               ? 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-blue-200'
@@ -156,6 +194,22 @@ export default function CompactPartCard({
           {summaryOpen ? 'Cerrar' : 'Resumen'}
         </button>
       </div>
+
+      {/* Draft editor */}
+      {draftOpen && (
+        <div className="p-2.5 sm:p-3 bg-amber-500/5 border-t border-white/8 space-y-2">
+          <textarea
+            autoFocus
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={handleDraftBlur}
+            placeholder="Escribe aquí tu borrador, ideas, notas…"
+            rows={6}
+            className="w-full bg-white/5 border border-amber-500/20 rounded px-2.5 py-2 text-white/70 placeholder-white/30 focus:outline-none focus:border-amber-500/40 transition-colors resize-none text-xs leading-relaxed"
+          />
+          <span className="text-xs italic text-white/25">{savingDraft ? 'Guardando…' : draft !== savedDraft ? 'Sin guardar' : 'Guardado'}</span>
+        </div>
+      )}
 
       {/* Summary editor */}
       {summaryOpen && (

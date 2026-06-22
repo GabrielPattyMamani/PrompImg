@@ -57,8 +57,9 @@ create table if not exists novel_parts (
   novel_id   uuid references novels(id) on delete cascade not null,
   chapter_id uuid references novel_chapters(id) on delete cascade,
   title      text not null,
-  content    text not null,
+  content    text not null default '',
   summary    text,
+  draft      text,
   order_num  int default 0,
   created_at timestamptz default now()
 );

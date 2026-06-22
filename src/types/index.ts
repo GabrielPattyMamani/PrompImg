@@ -62,6 +62,7 @@ export interface NovelPart {
   title: string
   content: string
   summary?: string | null
+  draft?: string | null
   order_num: number
   created_at: string
 }
