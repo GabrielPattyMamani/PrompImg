@@ -66,6 +66,31 @@ export interface NovelPart {
   created_at: string
 }
 
+export interface NovelPlace {
+  id: string
+  novel_id: string
+  name: string
+  description: string | null
+  created_at: string
+}
+
+export interface NovelCharacter {
+  id: string
+  novel_id: string
+  name: string
+  description: string | null
+  role: string | null
+  appearance: string | null
+  created_at: string
+  place_ids?: string[]
+}
+
+export interface NovelCharacterPlace {
+  id: string
+  character_id: string
+  place_id: string
+}
+
 export interface ImageAlbum {
   id: string
   name: string

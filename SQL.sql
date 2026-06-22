@@ -64,6 +64,34 @@ create table if not exists novel_parts (
 );
 
 -- ================================================
+-- PASO 2b — Lugares y Personajes de Novelas
+-- ================================================
+create table if not exists novel_places (
+  id          uuid primary key default gen_random_uuid(),
+  novel_id    uuid references novels(id) on delete cascade not null,
+  name        text not null,
+  description text,
+  created_at  timestamptz default now()
+);
+
+create table if not exists novel_characters (
+  id          uuid primary key default gen_random_uuid(),
+  novel_id    uuid references novels(id) on delete cascade not null,
+  name        text not null,
+  description text,
+  role        text,
+  appearance  text,
+  created_at  timestamptz default now()
+);
+
+create table if not exists novel_character_places (
+  id           uuid primary key default gen_random_uuid(),
+  character_id uuid references novel_characters(id) on delete cascade not null,
+  place_id     uuid references novel_places(id) on delete cascade not null,
+  unique(character_id, place_id)
+);
+
+-- ================================================
 -- PASO 3 — Tablas de Galería de Imágenes
 -- ================================================
 create table if not exists image_albums (
@@ -91,6 +119,9 @@ alter table novels          enable row level security;
 alter table novel_contexts  enable row level security;
 alter table novel_chapters  enable row level security;
 alter table novel_parts     enable row level security;
+alter table novel_places           enable row level security;
+alter table novel_characters       enable row level security;
+alter table novel_character_places enable row level security;
 alter table image_albums    enable row level security;
 alter table album_images    enable row level security;
 
@@ -101,5 +132,8 @@ create policy "allow all" on novels         for all using (true) with check (tru
 create policy "allow all" on novel_contexts for all using (true) with check (true);
 create policy "allow all" on novel_chapters for all using (true) with check (true);
 create policy "allow all" on novel_parts    for all using (true) with check (true);
+create policy "allow all" on novel_places           for all using (true) with check (true);
+create policy "allow all" on novel_characters       for all using (true) with check (true);
+create policy "allow all" on novel_character_places  for all using (true) with check (true);
 create policy "allow all" on image_albums   for all using (true) with check (true);
 create policy "allow all" on album_images   for all using (true) with check (true);

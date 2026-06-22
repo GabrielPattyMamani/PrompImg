@@ -12,6 +12,8 @@ import ChapterHeader from '../components/ChapterHeader'
 import ChapterDetailsSection from '../components/ChapterDetailsSection'
 import ContextCard from '../components/ContextCard'
 import NovelConfigSection from '../components/NovelConfigSection'
+import NovelWorldSection from '../components/NovelWorldSection'
+import ChapterReaderModal from '../components/ChapterReaderModal'
 import ContentViewModal from '../components/ContentViewModal'
 import type { Novel as NovelType, NovelContext, NovelPart, NovelChapter } from '../types'
 
@@ -224,6 +226,7 @@ export default function Novel() {
   const [selectedChapterId, setSelectedChapterId] = useState<string | undefined>(undefined)
   const [viewing, setViewing] = useState<ViewingItem | null>(null)
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
+  const [readingChapter, setReadingChapter] = useState<{ chapter: NovelChapter; parts: NovelPart[] } | null>(null)
 
   useEffect(() => {
     if (id) fetchData(id)
@@ -378,6 +381,9 @@ export default function Novel() {
         onConfigChange={(config) => setNovel(prev => prev ? { ...prev, config } : prev)}
       />
 
+      {/* Mundo de la Novela */}
+      <NovelWorldSection novelId={novel.id} />
+
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-white/5 rounded-lg sm:rounded-xl w-full sm:w-fit mb-6 overflow-x-auto">
         <button
@@ -490,6 +496,7 @@ export default function Novel() {
                     orderNum={i + 1}
                     isExpanded={selectedChapterId === chapter.id}
                     hasUnassignedParts={parts.some(p => !p.chapter_id)}
+                    hasParts={chapterParts.length > 0}
                     onToggleExpand={() => setSelectedChapterId(selectedChapterId === chapter.id ? undefined : chapter.id)}
                     onAssignParts={() => {
                       setSelectedChapterId(chapter.id)
@@ -501,6 +508,7 @@ export default function Novel() {
                         c.id === chapter.id ? { ...c, title: newTitle } : c
                       ))
                     }}
+                    onRead={() => setReadingChapter({ chapter, parts: chapterParts })}
                   />
 
                   {/* Context/Summary section */}
@@ -724,6 +732,15 @@ export default function Novel() {
                 : p
             ))
           }}
+        />
+      )}
+
+      {readingChapter && (
+        <ChapterReaderModal
+          chapterTitle={readingChapter.chapter.title}
+          chapterOrder={chapters.indexOf(readingChapter.chapter) + 1}
+          parts={readingChapter.parts}
+          onClose={() => setReadingChapter(null)}
         />
       )}
 
