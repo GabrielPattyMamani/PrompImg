@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Entry } from '../types'
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 
 export default function EntryCard({ entry, onDelete, onEdit, isDuplicate }: Props) {
   const [expanded, setExpanded] = useState(false)
-  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [copying, setCopying] = useState(false)
 
   const images = [...(entry.images ?? [])].sort((a, b) =>
@@ -18,6 +18,20 @@ export default function EntryCard({ entry, onDelete, onEdit, isDuplicate }: Prop
   )
   const cover = images[0]
   const extraCount = images.length - 1
+
+  const handleLightboxKey = useCallback((e: KeyboardEvent) => {
+    if (lightboxIndex === null) return
+    if (e.key === 'Escape') setLightboxIndex(null)
+    else if (e.key === 'ArrowLeft') setLightboxIndex((lightboxIndex - 1 + images.length) % images.length)
+    else if (e.key === 'ArrowRight') setLightboxIndex((lightboxIndex + 1) % images.length)
+  }, [lightboxIndex, images.length])
+
+  useEffect(() => {
+    if (lightboxIndex !== null) {
+      window.addEventListener('keydown', handleLightboxKey)
+      return () => window.removeEventListener('keydown', handleLightboxKey)
+    }
+  }, [lightboxIndex, handleLightboxKey])
 
   async function copyPrompt() {
     await navigator.clipboard.writeText(entry.prompt)
@@ -43,7 +57,7 @@ export default function EntryCard({ entry, onDelete, onEdit, isDuplicate }: Prop
 
         <div
           className="relative w-full aspect-video overflow-hidden flex-shrink-0 cursor-zoom-in bg-white/3"
-          onClick={() => cover && setLightbox(cover.image_data)}
+          onClick={() => cover && setLightboxIndex(0)}
         >
           {cover ? (
             <>
@@ -131,22 +145,86 @@ export default function EntryCard({ entry, onDelete, onEdit, isDuplicate }: Prop
         </div>
       </div>
 
-      {lightbox && (
+      {lightboxIndex !== null && images.length > 0 && (
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}
+          onClick={() => setLightboxIndex(null)}
         >
           <img
-            src={lightbox}
-            className="max-w-full max-h-full object-contain rounded-lg"
+            src={images[lightboxIndex].image_data}
+            className="max-w-full max-h-[85vh] object-contain rounded-lg"
             alt=""
+            onClick={(e) => e.stopPropagation()}
           />
-          <button
-            className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl"
-            onClick={() => setLightbox(null)}
-          >
-            ×
-          </button>
+
+          {images.length > 1 && (
+            <>
+              <button
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex((lightboxIndex - 1 + images.length) % images.length)
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex((lightboxIndex + 1) % images.length)
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                {images.map((_, i) => (
+                  <button
+                    key={i}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      i === lightboxIndex ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setLightboxIndex(i)
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          <div className="absolute top-4 right-4 flex items-center gap-3">
+            {images.length > 1 && (
+              <span className="text-white/50 text-sm">{lightboxIndex + 1} / {images.length}</span>
+            )}
+            <button
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center transition-colors"
+              title="Descargar imagen"
+              onClick={(e) => {
+                e.stopPropagation()
+                const a = document.createElement('a')
+                a.href = images[lightboxIndex].image_data
+                a.download = `${entry.title || 'imagen'}-${lightboxIndex + 1}.webp`
+                a.click()
+              }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+              </svg>
+            </button>
+            <button
+              className="text-white/60 hover:text-white text-2xl"
+              onClick={() => setLightboxIndex(null)}
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
     </>
