@@ -11,6 +11,7 @@ import CompactPartCard from '../components/CompactPartCard'
 import ChapterHeader from '../components/ChapterHeader'
 import ChapterDetailsSection from '../components/ChapterDetailsSection'
 import ContextCard from '../components/ContextCard'
+import NovelConfigSection from '../components/NovelConfigSection'
 import ContentViewModal from '../components/ContentViewModal'
 import type { Novel as NovelType, NovelContext, NovelPart, NovelChapter } from '../types'
 
@@ -363,6 +364,13 @@ export default function Novel() {
           </button>
         </div>
       </div>
+
+      {/* Config de Novela */}
+      <NovelConfigSection
+        novelId={novel.id}
+        initialConfig={novel.config ?? null}
+        onConfigChange={(config) => setNovel(prev => prev ? { ...prev, config } : prev)}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-white/5 rounded-lg sm:rounded-xl w-full sm:w-fit mb-6 overflow-x-auto">

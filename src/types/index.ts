@@ -27,6 +27,7 @@ export interface Novel {
   id: string
   title: string
   description: string | null
+  config?: string | null
   created_at: string
   context_count?: number
   part_count?: number
