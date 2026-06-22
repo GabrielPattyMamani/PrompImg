@@ -262,6 +262,12 @@ export default function Novel() {
     setParts(prev => prev.filter(p => p.id !== partId))
   }
 
+  async function unassignPartFromChapter(partId: string) {
+    if (!confirm('¿Quitar esta parte del capítulo?')) return
+    await supabase.from('novel_parts').update({ chapter_id: null }).eq('id', partId)
+    setParts(prev => prev.map(p => p.id === partId ? { ...p, chapter_id: null } : p))
+  }
+
   function handleSummaryUpdate(partId: string, summary: string) {
     setParts(prev => prev.map(p => p.id === partId ? { ...p, summary } : p))
   }
@@ -537,7 +543,7 @@ export default function Novel() {
                               key={part.id}
                               part={part}
                               partIdx={partIdx}
-                              onDelete={() => deletePart(part.id)}
+                              onDelete={() => unassignPartFromChapter(part.id)}
                               onSummaryChange={handleSummaryUpdate}
                               onExpandClick={() => setViewing({ type: 'part', item: part, orderNum: partIdx + 1 })}
                               onToggleSelect={toggleSelectedItem}
