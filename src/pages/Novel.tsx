@@ -9,6 +9,7 @@ import NewChapterModal from '../components/NewChapterModal'
 import AssignPartsToChapterModal from '../components/AssignPartsToChapterModal'
 import CompactPartCard from '../components/CompactPartCard'
 import ChapterDetailsSection from '../components/ChapterDetailsSection'
+import ContextCard from '../components/ContextCard'
 import ContentViewModal from '../components/ContentViewModal'
 import type { Novel as NovelType, NovelContext, NovelPart, NovelChapter } from '../types'
 
@@ -428,76 +429,21 @@ export default function Novel() {
           </div>
         ) : (
           <div className="space-y-3 sm:space-y-4">
-            {contexts.map((ctx, i) => {
-              const coveredParts = ctx.part_ids?.length ? parts.filter(p => ctx.part_ids?.includes(p.id)).map((p) => parts.indexOf(p) + 1) : []
-              return (
-                <div
-                  key={ctx.id}
-                  className={`border rounded-xl sm:rounded-2xl p-3 sm:p-4 transition-colors ${isItemSelected('context', ctx.id) ? 'border-amber-500/50 bg-amber-500/5' : 'bg-[#1a1a22] border-white/8 hover:border-white/20'}`}
-                >
-                  <div className="flex items-start gap-2.5 pb-3 sm:pb-4 border-b border-white/8">
-                    <input
-                      type="checkbox"
-                      checked={isItemSelected('context', ctx.id)}
-                      onChange={() => toggleSelectedItem({ type: 'context', id: ctx.id, title: ctx.title ?? `Contexto ${i + 1}`, content: ctx.content, orderNum: i + 1 })}
-                      className="w-5 h-5 mt-0.5 accent-amber-500 cursor-pointer flex-shrink-0"
-                    />
-                    <div
-                      className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => setViewing({ type: 'context', item: ctx, orderNum: i + 1 })}
-                    >
-                      <div className="flex items-start gap-2 mb-2">
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300 whitespace-nowrap flex-shrink-0">Contexto {i + 1}</span>
-                        {ctx.title && <span className="text-white/60 text-xs sm:text-sm font-medium line-clamp-2">{ctx.title}</span>}
-                      </div>
-                      <p className="text-white/50 text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3 break-words">
-                        {ctx.content}
-                      </p>
-                    </div>
-                  </div>
-
-                  {coveredParts.length > 0 && (
-                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-b border-white/8 pb-2 sm:pb-3">
-                      <p className="text-xs text-white/40 mb-1.5 font-medium">Abarca {coveredParts.length} parte(s)</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {coveredParts.map(partNum => (
-                          <span key={partNum} className="text-xs px-2 py-1 rounded-full bg-amber-400/10 text-amber-300">
-                            P{partNum}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 flex flex-col sm:flex-row gap-2 sm:gap-1.5">
-                    <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        navigator.clipboard.writeText(ctx.content)
-                      }}
-                      className="flex-1 px-3 py-2 sm:py-1.5 rounded-lg bg-white/8 hover:bg-white/12 text-white/60 hover:text-white/80 transition-all text-xs sm:text-xs font-medium"
-                    >
-                      Copiar
-                    </button>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        setViewing({ type: 'context', item: ctx, orderNum: i + 1 })
-                      }}
-                      className="flex-1 px-3 py-2 sm:py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 hover:text-violet-200 transition-all text-xs sm:text-xs font-medium"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); deleteContext(ctx.id) }}
-                      className="flex-1 px-3 py-2 sm:py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all text-xs sm:text-xs font-medium"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
+            {contexts.map((ctx, i) => (
+              <ContextCard
+                key={ctx.id}
+                ctx={ctx}
+                orderNum={i + 1}
+                parts={parts}
+                isSelected={isItemSelected('context', ctx.id)}
+                onToggleSelect={toggleSelectedItem}
+                onView={() => setViewing({ type: 'context', item: ctx, orderNum: i + 1 })}
+                onDelete={() => deleteContext(ctx.id)}
+                onCompactChange={(id, compact) => {
+                  setContexts(prev => prev.map(c => c.id === id ? { ...c, compact } : c))
+                }}
+              />
+            ))}
           </div>
         )
       )}

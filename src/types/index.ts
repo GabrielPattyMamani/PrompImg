@@ -38,6 +38,7 @@ export interface NovelContext {
   novel_id: string
   title: string | null
   content: string
+  compact?: string | null
   part_ids?: string[] | null
   order_num: number
   created_at: string
