@@ -320,51 +320,53 @@ export default function Novel() {
   return (
     <Layout>
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-5 sm:mb-6">
         <Link to="/novels" className="text-white/40 hover:text-white/60 text-xs sm:text-sm transition-colors mb-2 inline-flex items-center gap-1">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Novelas
         </Link>
-        <div className="mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">{novel.title}</h1>
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight leading-tight">{novel.title}</h1>
           {novel.description && (
             <p className="text-white/40 text-xs sm:text-sm mt-1.5">{novel.description}</p>
           )}
         </div>
 
         {/* Botones de acción */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
-          {parts.some(p => p.summary?.trim()) && (
-            <Link
-              to={`/novel/${novel.id}/summaries`}
-              className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 bg-white/6 hover:bg-white/10 text-white/60 hover:text-white/80 rounded-lg sm:rounded-xl font-medium text-sm transition-colors border border-white/8 order-2 sm:order-none"
-            >
-              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Resúmenes</span>
-            </Link>
-          )}
-          {parts.length > 0 && (
-            <Link
-              to={`/novel/${novel.id}/read`}
-              className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 bg-amber-700/80 hover:bg-amber-700 text-amber-100 rounded-lg sm:rounded-xl font-medium text-sm transition-colors order-1 sm:order-none"
-            >
-              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-              <span>Leer novela</span>
-            </Link>
-          )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex gap-2 sm:contents">
+            {parts.length > 0 && (
+              <Link
+                to={`/novel/${novel.id}/read`}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-amber-700/80 hover:bg-amber-700 text-amber-100 rounded-lg font-medium text-xs sm:text-sm transition-colors order-1 sm:order-none"
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <span>Leer novela</span>
+              </Link>
+            )}
+            {parts.some(p => p.summary?.trim()) && (
+              <Link
+                to={`/novel/${novel.id}/summaries`}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-white/6 hover:bg-white/10 text-white/60 hover:text-white/80 rounded-lg font-medium text-xs sm:text-sm transition-colors border border-white/8 order-2 sm:order-none"
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Resúmenes</span>
+              </Link>
+            )}
+          </div>
           <button
             onClick={() => {
               if (tab === 'contexts') setShowContextModal(true)
               else if (tab === 'chapters') setShowChapterModal(true)
               else setShowPartModal(true)
             }}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg sm:rounded-xl font-medium text-sm transition-colors order-3 sm:order-none"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 sm:py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-medium text-xs sm:text-sm transition-colors order-3 sm:order-none"
           >
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -385,7 +387,7 @@ export default function Novel() {
       <NovelWorldSection novelId={novel.id} />
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-white/5 rounded-lg sm:rounded-xl w-full sm:w-fit mb-6 overflow-x-auto">
+      <div className="flex gap-1 p-1 bg-white/5 rounded-lg sm:rounded-xl w-full sm:w-fit mb-4 sm:mb-6 overflow-x-auto">
         <button
           onClick={() => setTab('chapters')}
           className={`flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
@@ -553,6 +555,7 @@ export default function Novel() {
                               partIdx={partIdx}
                               onDelete={() => unassignPartFromChapter(part.id)}
                               onSummaryChange={handleSummaryUpdate}
+                              onUpdated={updated => setParts(prev => prev.map(p => p.id === updated.id ? updated : p))}
                               onExpandClick={() => setViewing({ type: 'part', item: part, orderNum: partIdx + 1 })}
                               onToggleSelect={toggleSelectedItem}
                               isSelected={isItemSelected('part', part.id)}

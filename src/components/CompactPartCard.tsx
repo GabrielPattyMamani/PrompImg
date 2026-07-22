@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { NovelPart } from '../types'
+import EditPartModal from './EditPartModal'
 
 type SelectedItem =
   | { type: 'part'; id: string; title: string; content: string; orderNum: number }
@@ -12,6 +13,7 @@ interface Props {
   onDelete: () => void
   onSummaryChange: (id: string, summary: string) => void
   onExpandClick: () => void
+  onUpdated: (part: NovelPart) => void
   onToggleSelect?: (item: SelectedItem) => void
   isSelected?: boolean
   isSummarySelected?: boolean
@@ -23,6 +25,7 @@ export default function CompactPartCard({
   onDelete,
   onSummaryChange,
   onExpandClick,
+  onUpdated,
   onToggleSelect,
   isSelected = false,
   isSummarySelected = false,
@@ -36,6 +39,14 @@ export default function CompactPartCard({
   const [savedDraft, setSavedDraft] = useState(part.draft ?? '')
   const [saving, setSaving] = useState(false)
   const [savingDraft, setSavingDraft] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+
+  function handlePartUpdated(updated: NovelPart) {
+    setDraft(updated.draft ?? '')
+    setSavedDraft(updated.draft ?? '')
+    onUpdated(updated)
+    setShowEditModal(false)
+  }
 
   function handleCopy() {
     navigator.clipboard.writeText(`${part.title}\n\n${part.content}`).then(() => {
@@ -150,10 +161,10 @@ export default function CompactPartCard({
       )}
 
       {/* Actions */}
-      <div className="flex gap-1 p-2 border-t border-white/8">
+      <div className="grid grid-cols-2 sm:flex gap-1.5 sm:gap-1 p-2 border-t border-white/8">
         <button
           onClick={handleCopy}
-          className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${
+          className={`px-2 py-2.5 sm:py-1.5 sm:flex-1 rounded text-xs font-medium transition-all ${
             copied
               ? 'bg-green-500/20 text-green-400'
               : 'bg-white/8 hover:bg-white/12 text-white/60 hover:text-white/80'
@@ -164,14 +175,21 @@ export default function CompactPartCard({
         </button>
         <button
           onClick={onExpandClick}
-          className="flex-1 px-2 py-1.5 rounded text-xs font-medium bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 hover:text-violet-200 transition-all"
-          title="Leer y editar parte"
+          className="px-2 py-2.5 sm:py-1.5 sm:flex-1 rounded text-xs font-medium bg-white/8 hover:bg-white/12 text-white/60 hover:text-white/80 transition-all"
+          title="Leer parte"
         >
           Leer
         </button>
         <button
+          onClick={() => setShowEditModal(true)}
+          className="px-2 py-2.5 sm:py-1.5 sm:flex-1 rounded text-xs font-medium bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 hover:text-violet-200 transition-all"
+          title="Editar parte"
+        >
+          Editar
+        </button>
+        <button
           onClick={() => { setDraftOpen(!draftOpen); if (!draftOpen) setSummaryOpen(false) }}
-          className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${
+          className={`px-2 py-2.5 sm:py-1.5 sm:flex-1 rounded text-xs font-medium transition-all ${
             draftOpen
               ? 'bg-amber-500/30 text-amber-200'
               : draft.trim()
@@ -184,7 +202,7 @@ export default function CompactPartCard({
         </button>
         <button
           onClick={() => { setSummaryOpen(!summaryOpen); if (!summaryOpen) setDraftOpen(false) }}
-          className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${
+          className={`col-span-2 sm:col-span-1 px-2 py-2.5 sm:py-1.5 sm:flex-1 rounded text-xs font-medium transition-all ${
             summary.trim()
               ? 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-blue-200'
               : 'bg-white/8 text-white/40'
@@ -225,6 +243,15 @@ export default function CompactPartCard({
           />
           <span className="text-xs italic text-white/25">{saving ? 'Guardando…' : summary !== savedSummary ? 'Sin guardar' : 'Guardado'}</span>
         </div>
+      )}
+
+      {showEditModal && (
+        <EditPartModal
+          part={part}
+          orderNum={partIdx + 1}
+          onClose={() => setShowEditModal(false)}
+          onUpdated={handlePartUpdated}
+        />
       )}
     </div>
   )
