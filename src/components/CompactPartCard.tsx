@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { NovelPart } from '../types'
 import EditPartModal from './EditPartModal'
+import PartImagesModal from './PartImagesModal'
 
 type SelectedItem =
   | { type: 'part'; id: string; title: string; content: string; orderNum: number }
@@ -40,6 +41,7 @@ export default function CompactPartCard({
   const [saving, setSaving] = useState(false)
   const [savingDraft, setSavingDraft] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showImagesModal, setShowImagesModal] = useState(false)
   const [actionsOpen, setActionsOpen] = useState(false)
 
   function handlePartUpdated(updated: NovelPart) {
@@ -185,11 +187,11 @@ export default function CompactPartCard({
           {copied ? '✓' : 'Copiar'}
         </button>
         <button
-          onClick={onExpandClick}
+          onClick={() => setShowImagesModal(true)}
           className="px-2 py-2.5 sm:py-1.5 sm:flex-1 rounded text-xs font-medium bg-white/8 hover:bg-white/12 text-white/60 hover:text-white/80 transition-all"
-          title="Leer parte"
+          title="Imágenes de esta parte"
         >
-          Leer
+          Imágenes
         </button>
         <button
           onClick={() => setShowEditModal(true)}
@@ -263,6 +265,14 @@ export default function CompactPartCard({
           orderNum={partIdx + 1}
           onClose={() => setShowEditModal(false)}
           onUpdated={handlePartUpdated}
+        />
+      )}
+
+      {showImagesModal && (
+        <PartImagesModal
+          partId={part.id}
+          orderNum={partIdx + 1}
+          onClose={() => setShowImagesModal(false)}
         />
       )}
     </div>

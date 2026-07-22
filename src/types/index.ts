@@ -67,6 +67,13 @@ export interface NovelPart {
   created_at: string
 }
 
+export interface NovelPartImage {
+  id: string
+  part_id: string
+  image_data: string
+  created_at: string
+}
+
 export interface NovelPlace {
   id: string
   novel_id: string
