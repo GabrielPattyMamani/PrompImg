@@ -47,7 +47,7 @@ export default function EditPartModal({ part, orderNum, onClose, onUpdated }: Pr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="relative bg-[#1a1a22] border border-white/10 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[90svh] overflow-y-auto">
         <div className="flex items-center gap-2 mb-5">
           <span className="text-xs px-2 py-0.5 rounded-full bg-violet-400/10 text-violet-300 font-medium">

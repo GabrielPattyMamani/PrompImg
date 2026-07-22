@@ -40,6 +40,7 @@ export default function CompactPartCard({
   const [saving, setSaving] = useState(false)
   const [savingDraft, setSavingDraft] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [actionsOpen, setActionsOpen] = useState(false)
 
   function handlePartUpdated(updated: NovelPart) {
     setDraft(updated.draft ?? '')
@@ -80,7 +81,7 @@ export default function CompactPartCard({
     }`}>
       {/* Part header - clickeable para expandir */}
       <div
-        className="p-2.5 sm:p-3 flex items-start gap-2 cursor-pointer hover:bg-white/3 transition-colors"
+        className="p-2.5 sm:p-3 flex items-start gap-2 hover:bg-white/3 transition-colors"
       >
         {onToggleSelect && (
           <input
@@ -99,7 +100,7 @@ export default function CompactPartCard({
         )}
         <div
           onClick={onExpandClick}
-          className="flex-1 min-w-0"
+          className="flex-1 min-w-0 cursor-pointer"
         >
           <div className="flex items-start gap-2 mb-1">
             <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-violet-400/10 text-violet-300 whitespace-nowrap flex-shrink-0">
@@ -110,11 +111,20 @@ export default function CompactPartCard({
           <p className="text-white/50 text-xs leading-relaxed line-clamp-2 break-words">{part.content}</p>
         </div>
         <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
-          }}
-          className="text-white/40 hover:text-red-400 text-sm transition-colors flex-shrink-0 mt-0.5"
+          onClick={() => setActionsOpen(v => !v)}
+          className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 active:bg-white/15 text-white/50 hover:text-white/80 transition-all flex-shrink-0"
+          title={actionsOpen ? 'Ocultar acciones' : 'Mostrar acciones'}
+        >
+          <svg
+            className={`w-5 h-5 transition-transform ${actionsOpen ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <button
+          onClick={onDelete}
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-red-500/10 active:bg-red-500/15 text-lg transition-all flex-shrink-0"
           title="Eliminar"
         >
           ×
@@ -161,6 +171,7 @@ export default function CompactPartCard({
       )}
 
       {/* Actions */}
+      {actionsOpen && (
       <div className="grid grid-cols-2 sm:flex gap-1.5 sm:gap-1 p-2 border-t border-white/8">
         <button
           onClick={handleCopy}
@@ -212,6 +223,7 @@ export default function CompactPartCard({
           {summaryOpen ? 'Cerrar' : 'Resumen'}
         </button>
       </div>
+      )}
 
       {/* Draft editor */}
       {draftOpen && (
