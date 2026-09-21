@@ -31,6 +31,7 @@ function toWebPDataURL(file: File, quality = 0.85): Promise<string> {
 export default function EditEntryModal({ entry, onClose, onSaved }: Props) {
   const [title, setTitle] = useState(entry.title ?? '')
   const [prompt, setPrompt] = useState(entry.prompt)
+  const [negativePrompt, setNegativePrompt] = useState(entry.negative_prompt ?? '')
   const [images, setImages] = useState<ImageItem[]>(
     [...(entry.images ?? [])]
       .sort((a, b) => (a.created_at < b.created_at ? -1 : 1))
@@ -84,7 +85,11 @@ export default function EditEntryModal({ entry, onClose, onSaved }: Props) {
     try {
       const { data: updatedEntry, error: updateErr } = await supabase
         .from('entries')
-        .update({ title: title.trim() || null, prompt: prompt.trim() })
+        .update({
+          title: title.trim() || null,
+          prompt: prompt.trim(),
+          negative_prompt: negativePrompt.trim() || null,
+        })
         .eq('id', entry.id)
         .select()
         .single()
@@ -162,6 +167,16 @@ export default function EditEntryModal({ entry, onClose, onSaved }: Props) {
                 placeholder="Pega aquí tu prompt completo…"
                 rows={6}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition-colors resize-none font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-white/60 mb-1.5 block">Prompt negativo (opcional)</label>
+              <textarea
+                value={negativePrompt}
+                onChange={e => setNegativePrompt(e.target.value)}
+                placeholder="ej. blurry, low quality, extra fingers…"
+                rows={3}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-red-500/60 transition-colors resize-none font-mono text-sm"
               />
             </div>
             <div>

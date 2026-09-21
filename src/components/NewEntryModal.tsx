@@ -27,6 +27,7 @@ function toWebPDataURL(file: File, quality = 0.85): Promise<string> {
 export default function NewEntryModal({ collectionId, onClose, onCreated }: Props) {
   const [title, setTitle] = useState('')
   const [prompt, setPrompt] = useState('')
+  const [negativePrompt, setNegativePrompt] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -68,6 +69,7 @@ export default function NewEntryModal({ collectionId, onClose, onCreated }: Prop
           collection_id: collectionId,
           title: title.trim() || null,
           prompt: prompt.trim(),
+          negative_prompt: negativePrompt.trim() || null,
         })
         .select()
         .single()
@@ -149,6 +151,16 @@ export default function NewEntryModal({ collectionId, onClose, onCreated }: Prop
               placeholder="Pega aquí tu prompt completo…"
               rows={6}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition-colors resize-none font-mono text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-white/60 mb-1.5 block">Prompt negativo (opcional)</label>
+            <textarea
+              value={negativePrompt}
+              onChange={e => setNegativePrompt(e.target.value)}
+              placeholder="ej. blurry, low quality, extra fingers…"
+              rows={3}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-red-500/60 transition-colors resize-none font-mono text-sm"
             />
           </div>
           <div>

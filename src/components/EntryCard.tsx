@@ -12,6 +12,7 @@ export default function EntryCard({ entry, onDelete, onEdit, isDuplicate }: Prop
   const [expanded, setExpanded] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [copying, setCopying] = useState(false)
+  const [copyingNegative, setCopyingNegative] = useState(false)
 
   const images = [...(entry.images ?? [])].sort((a, b) =>
     a.created_at < b.created_at ? -1 : 1
@@ -37,6 +38,13 @@ export default function EntryCard({ entry, onDelete, onEdit, isDuplicate }: Prop
     await navigator.clipboard.writeText(entry.prompt)
     setCopying(true)
     setTimeout(() => setCopying(false), 1500)
+  }
+
+  async function copyNegativePrompt() {
+    if (!entry.negative_prompt) return
+    await navigator.clipboard.writeText(entry.negative_prompt)
+    setCopyingNegative(true)
+    setTimeout(() => setCopyingNegative(false), 1500)
   }
 
   return (
@@ -105,6 +113,16 @@ export default function EntryCard({ entry, onDelete, onEdit, isDuplicate }: Prop
                 {expanded ? 'Ver menos' : 'Ver más'}
               </button>
             )}
+            {entry.negative_prompt && (
+              <p
+                className={`text-red-400/50 text-xs font-mono leading-relaxed whitespace-pre-wrap break-words mt-2 ${
+                  !expanded && 'line-clamp-2'
+                }`}
+              >
+                <span className="text-red-400/70 font-semibold">Negativo: </span>
+                {entry.negative_prompt}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 mt-4">
@@ -128,6 +146,28 @@ export default function EntryCard({ entry, onDelete, onEdit, isDuplicate }: Prop
                 </>
               )}
             </button>
+            {entry.negative_prompt && (
+              <button
+                onClick={copyNegativePrompt}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-red-500/10 text-white/60 hover:text-red-400 transition-all"
+              >
+                {copyingNegative ? (
+                  <>
+                    <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-green-400">Copiado</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copiar negativo
+                  </>
+                )}
+              </button>
+            )}
             <span className="flex-1" />
             <button
               onClick={() => onEdit(entry)}

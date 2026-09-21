@@ -12,6 +12,7 @@ export interface Entry {
   collection_id: string
   title: string | null
   prompt: string
+  negative_prompt?: string | null
   created_at: string
   images?: EntryImage[]
 }
